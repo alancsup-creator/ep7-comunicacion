@@ -171,8 +171,8 @@
   <section id="cronograma" class="tab-content">
     <h2>🛡️ Cronograma de Cuidados de Recreos 2026</h2>
 
-    <!-- Buscador de Docente -->
-    <div style="margin: 15px 0; background: #f0f4f8; padding: 12px; border-radius: 8px; border: 1px solid #cbd5e1;">
+    <!-- Buscador de Docente Mejorado -->
+    <div style="margin: 15px 0; background: #f0f4f8; padding: 15px; border-radius: 8px; border: 1px solid #cbd5e1;">
       <label for="buscarDocente" style="font-weight: bold; display: block; margin-bottom: 5px; color: var(--primary);">
         🔍 Buscar tu lugar de cuidado por apellido:
       </label>
@@ -183,6 +183,8 @@
         onkeyup="filtrarDocenteRecreo()"
         style="width: 100%; padding: 10px; border-radius: 6px; border: 1px solid #ccc; font-size: 15px;"
       >
+      <!-- Contenedor de Resultados Detallados -->
+      <div id="resultadoBusqueda" style="margin-top: 15px; display: none;"></div>
     </div>
 
     <!-- Plano de Zonas -->
@@ -423,25 +425,91 @@
   function filtrarDocenteRecreo() {
     const input = document.getElementById('buscarDocente');
     const filter = input.value.toLowerCase().trim();
-    const tables = document.querySelectorAll('#cronograma table');
+    const contenedorResultados = document.getElementById('resultadoBusqueda');
+    const secciones = document.querySelectorAll('#cronograma table');
 
-    tables.forEach(table => {
-      const rows = table.querySelectorAll('tbody tr');
-      
-      rows.forEach(row => {
-        const text = row.textContent.toLowerCase();
-        
-        if (filter === '') {
+    // Limpiar búsquedas previas
+    contenedorResultados.innerHTML = '';
+    contenedorResultados.style.display = 'none';
+
+    // Restaurar visibilidad normal de las tablas si el campo está vacío
+    if (filter === '') {
+      secciones.forEach(table => {
+        table.querySelectorAll('tbody tr').forEach(row => {
           row.style.display = '';
           row.style.backgroundColor = '';
-        } else if (text.includes(filter)) {
-          row.style.display = '';
-          row.style.backgroundColor = '#fef08a'; // Resalta en amarillo las filas encontradas
-        } else {
-          row.style.display = 'none';
+        });
+      });
+      return;
+    }
+
+    let coincidencias = [];
+
+    // Recorrer cada tabla (Mañana / Tarde / Ciclos)
+    secciones.forEach(table => {
+      // Obtener el título del turno/ciclo que está justo arriba de la tabla
+      const tituloCiclo = table.closest('div').previousElementSibling?.textContent || 'Cronograma';
+      const rows = table.querySelectorAll('tbody tr');
+      let horarioActual = '';
+
+      rows.forEach(row => {
+        // Si la fila contiene una celda de horario (con rowspan), actualizamos el horario de referencia
+        const celdaHorario = row.querySelector('td[rowspan]');
+        if (celdaHorario) {
+          horarioActual = celdaHorario.innerText.replace('\n', ' ');
+        }
+
+        const celdas = row.querySelectorAll('td');
+        if (celdas.length >= 2) {
+          // Determinar la celda del lugar según la estructura de la fila
+          const celdaLugar = celdaHorario ? celdas[1] : celdas[0];
+          const lugar = celdaLugar ? celdaLugar.innerText : '';
+
+          // Días de la semana en orden de columnas
+          const dias = ['Lunes', 'Martes', 'Miércoles', 'Jueves', 'Viernes'];
+          const offset = celdaHorario ? 2 : 1; // Ajuste según presencia de la celda de horario
+
+          dias.forEach((dia, index) => {
+            const celdaDia = celdas[index + offset];
+            if (celdaDia && celdaDia.innerText.toLowerCase().includes(filter)) {
+              coincidencias.push({
+                ciclo: tituloCiclo,
+                horario: horarioActual,
+                lugar: lugar,
+                dia: dia,
+                texto: celdaDia.innerText
+              });
+            }
+          });
         }
       });
     });
+
+    // Mostrar los resultados procesados en pantalla
+    if (coincidencias.length > 0) {
+      contenedorResultados.style.display = 'block';
+      let html = `<h4 style="color: var(--primary); margin-bottom: 10px;">Resultados encontrados (${coincidencias.length}):</h4>`;
+      html += `<div style="display: grid; gap: 10px; max-height: 300px; overflow-y: auto;">`;
+
+      coincidencias.forEach(item => {
+        html += `
+          <div style="background: white; padding: 10px 14px; border-radius: 6px; border-left: 5px solid var(--accent); box-shadow: 0 1px 3px rgba(0,0,0,0.1);">
+            <div style="font-weight: bold; color: var(--primary-dark); font-size: 14px;">${item.dia} — ${item.horario}</div>
+            <div style="font-size: 13px; color: #475569; margin-top: 2px;">
+              📍 <strong>Lugar:</strong> ${item.lugar} <br>
+              🏫 <strong>Turno/Ciclo:</strong> ${item.ciclo} <br>
+              👤 <strong>Asignación:</strong> ${item.texto}
+            </div>
+          </div>
+        `;
+      });
+
+      html += `</div>`;
+      contenedorResultados.innerHTML = html;
+    } else {
+      contenedorResultados.style.display = 'block';
+      contenedorResultados.innerHTML = `<p style="color: var(--danger); font-size: 14px; margin: 0;">No se encontraron turnos de cuidado para "${input.value}".</p>`;
+    }
   }
 
   // 4. Autenticación con Supabase
