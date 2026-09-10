@@ -1,0 +1,306 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<meta name="theme-color" content="#1e3a8a">
+<title>EP N° 7 - Comunicación Institucional</title>
+
+<!-- Manifest para instalación PWA -->
+<link rel="manifest" href="manifest.json">
+
+<!-- SDK Oficial de Supabase -->
+<script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+
+<style>
+  :root {
+    --primary: #1e3a8a;
+    --primary-dark: #1e293b;
+    --accent: #0284c7;
+    --bg: #f8fafc;
+    --card: #ffffff;
+    --text: #334155;
+    --border: #e2e8f0;
+    --danger: #ef4444;
+  }
+
+  * { box-sizing: border-box; margin: 0; padding: 0; font-family: system-ui, -apple-system, sans-serif; }
+  body { background: var(--bg); color: var(--text); display: flex; flex-direction: column; min-height: 100vh; }
+
+  /* Encabezado */
+  header { background: var(--primary); color: white; padding: 14px 20px; display: flex; align-items: center; justify-content: space-between; position: sticky; top: 0; z-index: 10; box-shadow: 0 2px 4px rgba(0,0,0,0.1); }
+  header h1 { font-size: 18px; font-weight: 700; }
+  .btn-menu { background: none; border: none; color: white; font-size: 24px; cursor: pointer; padding: 4px; }
+
+  /* Drawer / Panel Lateral Desplegable */
+  .overlay { position: fixed; inset: 0; background: rgba(0,0,0,0.5); z-index: 20; display: none; }
+  .overlay.active { display: block; }
+  
+  .drawer { position: fixed; top: 0; left: -280px; width: 280px; height: 100%; background: var(--primary-dark); color: white; z-index: 30; transition: left 0.3s ease; display: flex; flex-direction: column; }
+  .drawer.open { left: 0; }
+  .drawer-header { padding: 20px; border-bottom: 1px solid rgba(255,255,255,0.1); display: flex; justify-content: space-between; align-items: center; }
+  .drawer-header h2 { font-size: 16px; color: #93c5fd; }
+  
+  .nav-list { list-style: none; padding: 10px 0; overflow-y: auto; flex: 1; }
+  .nav-item { padding: 14px 20px; cursor: pointer; display: flex; align-items: center; gap: 12px; font-size: 15px; transition: background 0.2s; }
+  .nav-item:hover, .nav-item.active { background: rgba(255,255,255,0.1); border-left: 4px solid var(--accent); }
+
+  /* Vista de Autenticación */
+  .login-container { display: flex; justify-content: center; align-items: center; min-height: 80vh; padding: 20px; }
+  .login-card { background: var(--card); border: 1px solid var(--border); border-radius: 12px; padding: 24px; width: 100%; max-width: 360px; box-shadow: 0 4px 6px -1px rgba(0,0,0,0.1); }
+  .login-card h2 { margin-bottom: 16px; font-size: 20px; text-align: center; color: var(--primary); }
+  .form-group { margin-bottom: 14px; }
+  .form-group label { display: block; font-size: 13px; font-weight: 600; margin-bottom: 4px; }
+  .form-group input { width: 100%; padding: 10px; border: 1px solid var(--border); border-radius: 6px; font-size: 14px; }
+  .btn-submit { width: 100%; background: var(--primary); color: white; border: none; padding: 12px; border-radius: 6px; font-weight: 600; cursor: pointer; margin-top: 8px; }
+  .btn-submit:disabled { opacity: 0.6; cursor: not-allowed; }
+  .error-msg { color: var(--danger); font-size: 13px; margin-top: 8px; text-align: center; display: none; }
+
+  /* Contenido Principal Protegido */
+  main { padding: 20px; max-width: 1000px; margin: 0 auto; width: 100%; flex: 1; display: none; }
+  main.authenticated { display: block; }
+  
+  .tab-content { display: none; background: var(--card); border: 1px solid var(--border); border-radius: 12px; padding: 20px; box-shadow: 0 1px 3px rgba(0,0,0,0.05); }
+  .tab-content.active { display: block; }
+  .tab-content h2 { color: var(--primary); margin-bottom: 14px; font-size: 18px; border-bottom: 2px solid var(--border); padding-bottom: 8px; }
+
+  /* Tablas de Datos */
+  table { width: 100%; border-collapse: collapse; margin-top: 10px; font-size: 14px; }
+  th, td { border: 1px solid var(--border); padding: 10px; text-align: left; }
+  th { background: #f1f5f9; color: var(--primary-dark); font-weight: 600; }
+  
+  /* Banner PWA */
+  .pwa-banner { background: #e0f2fe; border: 1px solid #bae6fd; padding: 12px; border-radius: 8px; margin-bottom: 16px; display: none; justify-content: space-between; align-items: center; }
+  .btn-install { background: var(--accent); color: white; border: none; padding: 6px 12px; border-radius: 6px; font-weight: 600; cursor: pointer; }
+</style>
+</head>
+<body>
+
+<header>
+  <button class="btn-menu" id="openMenuBtn">☰</button>
+  <h1>EP N° 7 - Panel Institucional</h1>
+  <span id="userStatus" style="font-size: 12px; opacity: 0.8;">Invitado</span>
+</header>
+
+<div class="overlay" id="overlay"></div>
+
+<!-- Panel Lateral Desplegable -->
+<nav class="drawer" id="drawer">
+  <div class="drawer-header">
+    <h2>Menú Institucional</h2>
+    <button class="btn-menu" id="closeMenuBtn">✕</button>
+  </div>
+  <ul class="nav-list">
+    <li class="nav-item active" onclick="switchTab('docenteTurno')">📌 Docente de Turno</li>
+    <li class="nav-item" onclick="switchTab('cronograma')">🛡️ Cronograma de Cuidados</li>
+    <li class="nav-item" onclick="switchTab('horarios')">⏰ Horarios</li>
+    <li class="nav-item" onclick="switchTab('calificaciones')">📊 Calificaciones</li>
+    <li class="nav-item" onclick="switchTab('fechas')">📅 Fechas Importantes</li>
+    <li class="nav-item" onclick="switchTab('alumnos')">👥 Alumnos y Teléfonos</li>
+    <li class="nav-item" id="adminTab" style="display:none; color: #fca5a5;" onclick="switchTab('adminPanel')">⚙️ Gestión de Accesos</li>
+    <li class="nav-item" onclick="logout()" style="margin-top: auto; border-top: 1px solid rgba(255,255,255,0.1);">🚪 Cerrar Sesión</li>
+  </ul>
+</nav>
+
+<!-- Pantalla de Login -->
+<section class="login-container" id="loginSection">
+  <div class="login-card">
+    <h2>Acceso Docente</h2>
+    <form id="loginForm" onsubmit="handleLogin(event)">
+      <div class="form-group">
+        <label>Correo Electrónico</label>
+        <input type="email" id="username" required placeholder="docente@ep7.edu.ar">
+      </div>
+      <div class="form-group">
+        <label>Contraseña</label>
+        <input type="password" id="password" required placeholder="••••••••">
+      </div>
+      <button type="submit" class="btn-submit" id="loginBtn">Ingresar</button>
+      <p class="error-msg" id="errorMsg">Usuario o contraseña incorrectos.</p>
+    </form>
+  </div>
+</section>
+
+<!-- Contenido Principal Protegido -->
+<main id="mainContent">
+  
+  <div class="pwa-banner" id="pwaBanner">
+    <span>📲 Instalar app institucional en el teléfono</span>
+    <button class="btn-install" id="installPwaBtn">Instalar</button>
+  </div>
+
+  <!-- Pestaña 1: Docente de Turno -->
+  <section id="docenteTurno" class="tab-content active">
+    <h2>📌 Docente de Turno</h2>
+    <table>
+      <thead><tr><th>Semana</th><th>Turno Mañana</th><th>Turno Tarde</th></tr></thead>
+      <tbody>
+        <tr><td>Semana Actual</td><td>Prof. García</td><td>Prof. Martínez</td></tr>
+        <tr><td>Próxima Semana</td><td>Prof. López</td><td>Prof. Rodríguez</td></tr>
+      </tbody>
+    </table>
+  </section>
+
+  <!-- Pestaña 2: Cronograma de Cuidados -->
+  <section id="cronograma" class="tab-content">
+    <h2>🛡️ Cronograma de Cuidados de Recreo</h2>
+    <table>
+      <thead><tr><th>Sector</th><th>1° Recreo</th><th>2° Recreo</th></tr></thead>
+      <tbody>
+        <tr><td>Patio Central</td><td>Prof. Fernández</td><td>Prof. Gómez</td></tr>
+        <tr><td>Galería Principal</td><td>Prof. Pérez</td><td>Prof. Díaz</td></tr>
+      </tbody>
+    </table>
+  </section>
+
+  <!-- Pestaña 3: Horarios -->
+  <section id="horarios" class="tab-content">
+    <h2>⏰ Horarios Institucionales</h2>
+    <p>Consulta de horarios por sección y especialidades.</p>
+  </section>
+
+  <!-- Pestaña 4: Calificaciones -->
+  <section id="calificaciones" class="tab-content">
+    <h2>📊 Registro de Calificaciones</h2>
+    <p>Planillas de evaluación continua y entregas de RITE.</p>
+  </section>
+
+  <!-- Pestaña 5: Fechas Importantes -->
+  <section id="fechas" class="tab-content">
+    <h2>📅 Fechas Importantes y Agenda</h2>
+    <ul>
+      <li><strong>15/09:</strong> Reunión de personal.</li>
+      <li><strong>21/09:</strong> Jornada de evaluación institucional.</li>
+    </ul>
+  </section>
+
+  <!-- Pestaña 6: Listado de Alumnos con Teléfonos -->
+  <section id="alumnos" class="tab-content">
+    <h2>👥 Listado de Alumnos y Contactos de Emergencia</h2>
+    <table>
+      <thead><tr><th>Año / Sec.</th><th>Alumno</th><th>Adulto Responsable</th><th>Teléfono</th></tr></thead>
+      <tbody>
+        <tr><td>1° A</td><td>Pérez, Juan</td><td>Pérez, Carlos</td><td>2342-123456</td></tr>
+        <tr><td>1° A</td><td>Gómez, Sofía</td><td>Gómez, Laura</td><td>2342-654321</td></tr>
+      </tbody>
+    </table>
+  </section>
+
+  <!-- Pestaña de Administración -->
+  <section id="adminPanel" class="tab-content">
+    <h2>⚙️ Gestión de Accesos (Directivo)</h2>
+    <p>Para conceder, denegar o modificar accesos de docentes, ingresá directamente a tu panel de control de <strong>Supabase</strong> sección <code>Authentication -> Users</code>.</p>
+  </section>
+
+</main>
+
+<script>
+  // CONFIGURACIÓN DE SUPABASE
+  // Reemplazá estos dos valores con los de tu proyecto (Project Settings -> API)
+  const SUPABASE_URL = 'https://TU-PROYECTO.supabase.co';
+  const SUPABASE_ANON_KEY = 'TU-CLAVE-ANON-PUBLIC';
+
+  const supabaseClient = supabase.createClient(SUPABASE_URL, SUPABASE_ANON_KEY);
+
+  // Control del Drawer (Menú Desplegable)
+  const drawer = document.getElementById('drawer');
+  const overlay = document.getElementById('overlay');
+  
+  document.getElementById('openMenuBtn').addEventListener('click', () => {
+    drawer.classList.add('open');
+    overlay.classList.add('active');
+  });
+
+  const closeMenu = () => {
+    drawer.classList.remove('open');
+    overlay.classList.remove('active');
+  };
+
+  document.getElementById('closeMenuBtn').addEventListener('click', closeMenu);
+  overlay.addEventListener('click', closeMenu);
+
+  function switchTab(tabId) {
+    document.querySelectorAll('.tab-content').forEach(tab => tab.classList.remove('active'));
+    document.querySelectorAll('.nav-item').forEach(item => item.classList.remove('active'));
+    
+    document.getElementById(tabId).classList.add('active');
+    closeMenu();
+  }
+
+  // Autenticación con Supabase
+  async function handleLogin(e) {
+    e.preventDefault();
+    const email = document.getElementById('username').value;
+    const password = document.getElementById('password').value;
+    const loginBtn = document.getElementById('loginBtn');
+    const errorMsg = document.getElementById('errorMsg');
+
+    loginBtn.innerText = "Verificando...";
+    loginBtn.disabled = true;
+    errorMsg.style.display = 'none';
+
+    const { data, error } = await supabaseClient.auth.signInWithPassword({
+      email: email,
+      password: password,
+    });
+
+    loginBtn.innerText = "Ingresar";
+    loginBtn.disabled = false;
+
+    if (error) {
+      errorMsg.innerText = "Acceso denegado: " + error.message;
+      errorMsg.style.display = 'block';
+      return;
+    }
+
+    // Sesión iniciada correctamente
+    setAuthenticatedUser(data.user.email);
+  }
+
+  function setAuthenticatedUser(email) {
+    document.getElementById('loginSection').style.display = 'none';
+    document.getElementById('mainContent').classList.add('authenticated');
+    document.getElementById('userStatus').innerText = email;
+
+    // Habilitar la pestaña de administración si el correo pertenece al equipo directivo
+    if (email.includes('director') || email.includes('admin')) {
+      document.getElementById('adminTab').style.display = 'flex';
+    }
+  }
+
+  async function logout() {
+    await supabaseClient.auth.signOut();
+    document.getElementById('loginSection').style.display = 'flex';
+    document.getElementById('mainContent').classList.remove('authenticated');
+    document.getElementById('userStatus').innerText = 'Invitado';
+    document.getElementById('adminTab').style.display = 'none';
+    closeMenu();
+  }
+
+  // Verificar si hay sesión activa al recargar la página
+  window.addEventListener('load', async () => {
+    const { data: { session } } = await supabaseClient.auth.getSession();
+    if (session) {
+      setAuthenticatedUser(session.user.email);
+    }
+  });
+
+  // Instalación PWA
+  let deferredPrompt;
+  window.addEventListener('beforeinstallprompt', (e) => {
+    e.preventDefault();
+    deferredPrompt = e;
+    document.getElementById('pwaBanner').style.display = 'flex';
+  });
+
+  document.getElementById('installPwaBtn').addEventListener('click', () => {
+    if (deferredPrompt) {
+      deferredPrompt.prompt();
+      deferredPrompt.userChoice.then(() => {
+        document.getElementById('pwaBanner').style.display = 'none';
+      });
+    }
+  });
+</script>
+</body>
+</html>
