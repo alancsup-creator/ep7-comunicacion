@@ -566,18 +566,29 @@
 
   // 6. Instalación PWA
   let deferredPrompt;
+
+  // El navegador detecta que es instalable y guarda el evento
   window.addEventListener('beforeinstallprompt', (e) => {
     e.preventDefault();
     deferredPrompt = e;
-    document.getElementById('pwaBanner').style.display = 'flex';
+    // Muestra tu banner o botón personalizado si estaba oculto
+    const pwaBanner = document.getElementById('pwaBanner');
+    if (pwaBanner) pwaBanner.style.display = 'flex';
   });
 
+  // Al hacer clic en tu botón, se dispara la ventana del sistema
   document.getElementById('installPwaBtn').addEventListener('click', () => {
     if (deferredPrompt) {
       deferredPrompt.prompt();
-      deferredPrompt.userChoice.then(() => {
+      deferredPrompt.userChoice.then((choiceResult) => {
+        if (choiceResult.outcome === 'accepted') {
+          console.log('El usuario aceptó la instalación');
+        }
+        deferredPrompt = null;
         document.getElementById('pwaBanner').style.display = 'none';
       });
+    } else {
+      alert('Para instalar en iPhone: tocá el botón Compartir y seleccioná "Agregar a inicio". En Android, usá el menú de 3 puntos -> "Agregar a la pantalla principal".');
     }
   });
 </script>
