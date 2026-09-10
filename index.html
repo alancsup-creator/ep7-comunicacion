@@ -168,17 +168,24 @@
   </section>
 
   <!-- Pestaña 2: Cronograma de Cuidados -->
-  <section id="cronograma" class="tab-content">
-    <h2>🛡️ Cronograma de Cuidados de Recreo</h2>
-    <table>
-      <thead><tr><th>Sector</th><th>1° Recreo</th><th>2° Recreo</th></tr></thead>
-      <tbody>
-        <tr><td>Patio Central</td><td>Prof. Fernández</td><td>Prof. Gómez</td></tr>
-        <tr><td>Galería Principal</td><td>Prof. Pérez</td><td>Prof. Díaz</td></tr>
-      </tbody>
-    </table>
-  </section>
+<section id="cronograma" class="tab-content">
+  <h2>🛡️ Cronograma de Cuidados de Recreos 2026</h2>
 
+  <!-- Buscador de Docente -->
+  <div style="margin: 15px 0; background: #f0f4f8; padding: 12px; border-radius: 8px; border: 1px solid #cbd5e1;">
+    <label for="buscarDocente" style="font-weight: bold; display: block; margin-bottom: 5px; color: var(--primary);">
+      🔍 Buscar por apellido de docente:
+    </label>
+    <input 
+      type="text" 
+      id="buscarDocente" 
+      placeholder="Escribí un apellido (ej: Perafán, Csup, Chavez)..." 
+      onkeyup="filtrarDocenteRecreo()"
+      style="width: 100%; padding: 10px; border-radius: 6px; border: 1px solid #ccc; font-size: 15px;"
+    >
+  </div>
+
+  <!-- (Acá siguen el mapa y las tablas) -->
   <!-- Pestaña 3: Horarios -->
   <section id="horarios" class="tab-content">
     <h2>⏰ Horarios Institucionales</h2>
@@ -327,6 +334,32 @@
       });
     }
   });
+  function filtrarDocenteRecreo() {
+  const input = document.getElementById('buscarDocente');
+  const filter = input.value.toLowerCase().trim();
+  const tables = document.querySelectorAll('#cronograma table');
+
+  tables.forEach(table => {
+    const rows = table.querySelectorAll('tbody tr');
+    
+    rows.forEach(row => {
+      const text = row.textContent.toLowerCase();
+      
+      if (filter === '') {
+        // Si el buscador está vacío, muestra todas las filas y quita resaltado
+        row.style.display = '';
+        row.style.backgroundColor = '';
+      } else if (text.includes(filter)) {
+        // Muestra la fila y la resalta en amarillo suave
+        row.style.display = '';
+        row.style.backgroundColor = '#fef08a'; 
+      } else {
+        // Oculta las filas que no coinciden
+        row.style.display = 'none';
+      }
+    });
+  });
+}
 </script>
 </body>
 </html>
