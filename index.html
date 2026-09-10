@@ -370,18 +370,30 @@
   </section>
 
   <!-- Pestaña 6: Listado de Alumnos con Teléfonos -->
-  <section id="alumnos" class="tab-content">
-    <h2>👥 Listado de Alumnos y Contactos de Emergencia</h2>
-    <table>
-      <thead>
-        <tr>
-          <th>Año / Sec.</th>
-          <th>Alumno</th>
-          <th>Adulto Responsable</th>
-          <th>Teléfono</th>
-        </tr>
-      </thead>
-      <tbody>
+<section id="alumnos" class="tab-content">
+  <h2>👥 Listado de Alumnos y Contactos de Emergencia</h2>
+
+  <!-- Buscador -->
+  <div style="margin-bottom: 15px;">
+    <input 
+      type="text" 
+      id="inputBuscadorAlumnos" 
+      onkeyup="buscarAlumnos()" 
+      placeholder="🔍 Buscar por año, alumno, adulto o teléfono..." 
+      style="width: 100%; padding: 10px; font-size: 16px; border: 1px solid #ccc; border-radius: 6px;"
+    >
+  </div>
+
+  <table id="tablaAlumnos">
+    <thead>
+      <tr>
+        <th>Año / Sec.</th>
+        <th>Alumno</th>
+        <th>Adulto Responsable</th>
+        <th>Teléfono</th>
+      </tr>
+    </thead>
+    <tbody>
         <!-- Turno Mañana - 1° 1ª -->
         <tr><td>1° 1ª</td><td>ALIANO PINTOS, Álvaro Iván</td><td>Romero, Marianela</td><td>2342512982</td></tr>
         <tr><td>1° 1ª</td><td>BRUERA, Roma</td><td>Romero, Marianela</td><td>01133299753</td></tr>
@@ -772,29 +784,29 @@
         <tr><td>2° 4°</td><td>VELASCO, Gaspar</td><td>Perafán, Eliana / Chavez, Antonela</td><td>2342408491</td></tr>
 
         <!-- Turno Tarde - 3° 3° -->
-        <tr><td>3° 3°</td><td>AGUIRRE GARCIA, JUAN PABLO</td><td>Botta, Romina / Gorosito, Nélida</td><td>459880</td></tr>
-        <tr><td>3° 3°</td><td>ARGÜELLO BURGA, ANA</td><td>Botta, Romina / Gorosito, Nélida</td><td>404723 / 466300</td></tr>
-        <tr><td>3° 3°</td><td>BARBETTI, RENATA</td><td>Botta, Romina / Gorosito, Nélida</td><td>514894</td></tr>
-        <tr><td>3° 3°</td><td>BARRAZA, JUSTINA</td><td>Botta, Romina / Gorosito, Nélida</td><td>547454</td></tr>
-        <tr><td>3° 3°</td><td>CARO DEL BUE, PAULINA</td><td>Botta, Romina / Gorosito, Nélida</td><td>501129</td></tr>
-        <tr><td>3° 3°</td><td>CASARINI, GUILLERMO</td><td>Botta, Romina / Gorosito, Nélida</td><td>562657</td></tr>
-        <tr><td>3° 3°</td><td>FELIPE, NOAH</td><td>Botta, Romina / Gorosito, Nélida</td><td>403437</td></tr>
-        <tr><td>3° 3°</td><td>GARCÍA, THOMÁS</td><td>Botta, Romina / Gorosito, Nélida</td><td>512304</td></tr>
-        <tr><td>3° 3°</td><td>GIULIANO BIELSA, LUCA</td><td>Botta, Romina / Gorosito, Nélida</td><td>407155 / 2227 482812</td></tr>
-        <tr><td>3° 3°</td><td>LEGA, HELENA</td><td>Botta, Romina / Gorosito, Nélida</td><td>402681</td></tr>
-        <tr><td>3° 3°</td><td>LIN, FRANCO</td><td>Botta, Romina / Gorosito, Nélida</td><td>1167171839</td></tr>
-        <tr><td>3° 3°</td><td>LORENZANI, BENJAMÍN</td><td>Botta, Romina / Gorosito, Nélida</td><td>462565</td></tr>
-        <tr><td>3° 3°</td><td>LYALL GISONNO, DORIAN</td><td>Botta, Romina / Gorosito, Nélida</td><td>409566</td></tr>
-        <tr><td>3° 3°</td><td>MARSICANO, EMILIA</td><td>Botta, Romina / Gorosito, Nélida</td><td>406916</td></tr>
-        <tr><td>3° 3°</td><td>MARSSANI CICALA, FRANCISCO BENJAMÍN</td><td>Botta, Romina / Gorosito, Nélida</td><td>447145</td></tr>
-        <tr><td>3° 3°</td><td>MONGES, FAUSTINA</td><td>Botta, Romina / Gorosito, Nélida</td><td>532147</td></tr>
-        <tr><td>3° 3°</td><td>OTERMÍN GIMÉNEZ, PALOMA</td><td>Botta, Romina / Gorosito, Nélida</td><td>2346- 459586</td></tr>
-        <tr><td>3° 3°</td><td>PALERMO MOROSSINI, JULIA</td><td>Botta, Romina / Gorosito, Nélida</td><td>463981</td></tr>
-        <tr><td>3° 3°</td><td>PEREIRA BURGOS, FRANCISCO</td><td>Botta, Romina / Gorosito, Nélida</td><td>402125</td></tr>
-        <tr><td>3° 3°</td><td>PÉREZ, LOLA</td><td>Botta, Romina / Gorosito, Nélida</td><td>11-6215- 6590</td></tr>
-        <tr><td>3° 3°</td><td>RODRÍGUEZ, SIMÓN ANÍBAL</td><td>Botta, Romina / Gorosito, Nélida</td><td>565565</td></tr>
-        <tr><td>3° 3°</td><td>SARCO, THIAGO</td><td>Botta, Romina / Gorosito, Nélida</td><td>455553</td></tr>
-        <tr><td>3° 3°</td><td>SOSA, BENJAMÍN ELISEO</td><td>Botta, Romina / Gorosito, Nélida</td><td>1138412010</td></tr>
+        <tr><td>3° 3°</td><td>AGUIRRE GARCIA, JUAN PABLO</td><td>Citrángolo, Mirian</td><td>459880</td></tr>
+        <tr><td>3° 3°</td><td>ARGÜELLO BURGA, ANA</td><td>Citrángolo, Mirian</td><td>404723 / 466300</td></tr>
+        <tr><td>3° 3°</td><td>BARBETTI, RENATA</td><td>Citrángolo, Mirian</td><td>514894</td></tr>
+        <tr><td>3° 3°</td><td>BARRAZA, JUSTINA</td><td>Citrángolo, Mirian</td><td>547454</td></tr>
+        <tr><td>3° 3°</td><td>CARO DEL BUE, PAULINA</td><td>Citrángolo, Mirian</td><td>501129</td></tr>
+        <tr><td>3° 3°</td><td>CASARINI, GUILLERMO</td><td>Citrángolo, Mirian</td><td>562657</td></tr>
+        <tr><td>3° 3°</td><td>FELIPE, NOAH</td><td>Citrángolo, Mirian</td><td>403437</td></tr>
+        <tr><td>3° 3°</td><td>GARCÍA, THOMÁS</td><td>Citrángolo, Mirian</td><td>512304</td></tr>
+        <tr><td>3° 3°</td><td>GIULIANO BIELSA, LUCA</td><td>Citrángolo, Mirian</td><td>407155 / 2227 482812</td></tr>
+        <tr><td>3° 3°</td><td>LEGA, HELENA</td><td>Citrángolo, Mirian</td><td>402681</td></tr>
+        <tr><td>3° 3°</td><td>LIN, FRANCO</td><td>Citrángolo, Mirian</td><td>1167171839</td></tr>
+        <tr><td>3° 3°</td><td>LORENZANI, BENJAMÍN</td><td>Citrángolo, Mirian</td><td>462565</td></tr>
+        <tr><td>3° 3°</td><td>LYALL GISONNO, DORIAN</td><td>Citrángolo, Mirian</td><td>409566</td></tr>
+        <tr><td>3° 3°</td><td>MARSICANO, EMILIA</td><td>Citrángolo, Mirian</td><td>406916</td></tr>
+        <tr><td>3° 3°</td><td>MARSSANI CICALA, FRANCISCO BENJAMÍN</td><td>Citrángolo, Mirian</td><td>447145</td></tr>
+        <tr><td>3° 3°</td><td>MONGES, FAUSTINA</td><td>Citrángolo, Mirian</td><td>532147</td></tr>
+        <tr><td>3° 3°</td><td>OTERMÍN GIMÉNEZ, PALOMA</td><td>Citrángolo, Mirian</td><td>2346- 459586</td></tr>
+        <tr><td>3° 3°</td><td>PALERMO MOROSSINI, JULIA</td><td>Citrángolo, Mirian</td><td>463981</td></tr>
+        <tr><td>3° 3°</td><td>PEREIRA BURGOS, FRANCISCO</td><td>Citrángolo, Mirian</td><td>402125</td></tr>
+        <tr><td>3° 3°</td><td>PÉREZ, LOLA</td><td>Citrángolo, Mirian</td><td>11-6215- 6590</td></tr>
+        <tr><td>3° 3°</td><td>RODRÍGUEZ, SIMÓN ANÍBAL</td><td>Citrángolo, Mirian</td><td>565565</td></tr>
+        <tr><td>3° 3°</td><td>SARCO, THIAGO</td><td>Citrángolo, Mirian</td><td>455553</td></tr>
+        <tr><td>3° 3°</td><td>SOSA, BENJAMÍN ELISEO</td><td>Citrángolo, Mirian</td><td>1138412010</td></tr>
 
         <!-- Turno Tarde - 3° 4ª -->
        <tr><td>3° 4°</td><td>ALIANO, PEDRO</td><td>Aragonés, Yesica / García, Carina</td><td>445400</td></tr>
@@ -956,31 +968,31 @@
         <tr><td>6° 3°</td><td>ZÁRATE, Bianca</td><td>Acosta, Noelia</td><td>2342534749</td></tr>
 
           <!-- Turno Tarde - 6° 4ª -->
-        <tr><td>6° 4°</td><td>ACTIS CAPORALE, Alma</td><td>Citrángolo, Mirian</td><td>2342511192</td></tr>
-        <tr><td>6° 4°</td><td>ARBOLEDA MÁRQUEZ, Martín</td><td>Citrángolo, Mirian</td><td>1122467785</td></tr>
-        <tr><td>6° 4°</td><td>ARTOLA, Olivia</td><td>Citrángolo, Mirian</td><td>2342506433</td></tr>
-        <tr><td>6° 4°</td><td>ASTUDILLO, Julia</td><td>Citrángolo, Mirian</td><td>2342546323</td></tr>
-        <tr><td>6° 4°</td><td>BALLEJO, Emma</td><td>Citrángolo, Mirian</td><td>2342482814</td></tr>
-        <tr><td>6° 4°</td><td>BASSI, Martina</td><td>Citrángolo, Mirian</td><td>2342406059</td></tr>
-        <tr><td>6° 4°</td><td>BIANCO, Candelaria</td><td>Citrángolo, Mirian</td><td>2342400351</td></tr>
-        <tr><td>6° 4°</td><td>CURIALE, Ciro</td><td>Citrángolo, Mirian</td><td>2342515786 (nuevo)</td></tr>
-        <tr><td>6° 4°</td><td>DEL BASTO, Alison</td><td>Citrángolo, Mirian</td><td>2342516071</td></tr>
-        <tr><td>6° 4°</td><td>FIGUERÓN, Genaro</td><td>Citrángolo, Mirian</td><td>2342467645</td></tr>
-        <tr><td>6° 4°</td><td>FONTAINE, Alexia Jeanette</td><td>Citrángolo, Mirian</td><td>2342533209 (Padre) 2342402068 (abuela)</td></tr>
-        <tr><td>6° 4°</td><td>GODOY, Dylan</td><td>Citrángolo, Mirian</td><td>2342485070</td></tr>
-        <tr><td>6° 4°</td><td>GULLACE, Natalí</td><td>Citrángolo, Mirian</td><td>2342546012</td></tr>
-        <tr><td>6° 4°</td><td>HERNÁNDEZ, Maia</td><td>Citrángolo, Mirian</td><td>2342-446552</td></tr>
-        <tr><td>6° 4°</td><td>MEDINA, Genaro</td><td>Citrángolo, Mirian</td><td>2342445908</td></tr>
-        <tr><td>6° 4°</td><td>MONTENEGRO, Valentina</td><td>Citrángolo, Mirian</td><td>2342456743</td></tr>
-        <tr><td>6° 4°</td><td>MORAGAS, Canela</td><td>Citrángolo, Mirian</td><td>2342472674</td></tr>
-        <tr><td>6° 4°</td><td>MOYANO, Maia Evelyn</td><td>Citrángolo, Mirian</td><td>2342483677</td></tr>
-        <tr><td>6° 4°</td><td>NIGRO, Bautista</td><td>Citrángolo, Mirian</td><td>2342400855</td></tr>
-        <tr><td>6° 4°</td><td>QUESSI, Francesca</td><td>Citrángolo, Mirian</td><td>2342401792</td></tr>
-        <tr><td>6° 4°</td><td>RAGO, Francesca</td><td>Citrángolo, Mirian</td><td>2342509425</td></tr>
-        <tr><td>6° 4°</td><td>RICCI, Nicole</td><td>Citrángolo, Mirian</td><td>2342532952</td></tr>
-        <tr><td>6° 4°</td><td>ROSALES, Ignacio Joaquín</td><td>Citrángolo, Mirian</td><td>2657353759</td></tr>
-        <tr><td>6° 4°</td><td>SOSA, Brandon</td><td>Citrángolo, Mirian</td><td>2342455994</td></tr>
-        <tr><td>6° 4°</td><td>VILLA, Santiago</td><td>Citrángolo, Mirian</td><td>2342499084</td></tr>        
+        <tr><td>6° 4°</td><td>ACTIS CAPORALE, Alma</td><td>Botta, Romina / Gorosito, Nélida</td><td>2342511192</td></tr>
+        <tr><td>6° 4°</td><td>ARBOLEDA MÁRQUEZ, Martín</td><td>Botta, Romina / Gorosito, Nélida</td><td>1122467785</td></tr>
+        <tr><td>6° 4°</td><td>ARTOLA, Olivia</td><td>Botta, Romina / Gorosito, Nélida</td><td>2342506433</td></tr>
+        <tr><td>6° 4°</td><td>ASTUDILLO, Julia</td><td>Botta, Romina / Gorosito, Nélida</td><td>2342546323</td></tr>
+        <tr><td>6° 4°</td><td>BALLEJO, Emma</td><td>Botta, Romina / Gorosito, Nélida</td><td>2342482814</td></tr>
+        <tr><td>6° 4°</td><td>BASSI, Martina</td><td>Botta, Romina / Gorosito, Nélida</td><td>2342406059</td></tr>
+        <tr><td>6° 4°</td><td>BIANCO, Candelaria</td><td>Botta, Romina / Gorosito, Nélida</td><td>2342400351</td></tr>
+        <tr><td>6° 4°</td><td>CURIALE, Ciro</td><td>Botta, Romina / Gorosito, Nélida</td><td>2342515786 (nuevo)</td></tr>
+        <tr><td>6° 4°</td><td>DEL BASTO, Alison</td><td>Botta, Romina / Gorosito, Nélida</td><td>2342516071</td></tr>
+        <tr><td>6° 4°</td><td>FIGUERÓN, Genaro</td><td>Botta, Romina / Gorosito, Nélida</td><td>2342467645</td></tr>
+        <tr><td>6° 4°</td><td>FONTAINE, Alexia Jeanette</td><td>Botta, Romina / Gorosito, Nélida</td><td>2342533209 (Padre) 2342402068 (abuela)</td></tr>
+        <tr><td>6° 4°</td><td>GODOY, Dylan</td><td>Botta, Romina / Gorosito, Nélida</td><td>2342485070</td></tr>
+        <tr><td>6° 4°</td><td>GULLACE, Natalí</td><td>Botta, Romina / Gorosito, Nélida</td><td>2342546012</td></tr>
+        <tr><td>6° 4°</td><td>HERNÁNDEZ, Maia</td><td>Botta, Romina / Gorosito, Nélida</td><td>2342-446552</td></tr>
+        <tr><td>6° 4°</td><td>MEDINA, Genaro</td><td>Botta, Romina / Gorosito, Nélida</td><td>2342445908</td></tr>
+        <tr><td>6° 4°</td><td>MONTENEGRO, Valentina</td><td>Botta, Romina / Gorosito, Nélida</td><td>2342456743</td></tr>
+        <tr><td>6° 4°</td><td>MORAGAS, Canela</td><td>Botta, Romina / Gorosito, Nélida</td><td>2342472674</td></tr>
+        <tr><td>6° 4°</td><td>MOYANO, Maia Evelyn</td><td>Botta, Romina / Gorosito, Nélida</td><td>2342483677</td></tr>
+        <tr><td>6° 4°</td><td>NIGRO, Bautista</td><td>Botta, Romina / Gorosito, Nélida</td><td>2342400855</td></tr>
+        <tr><td>6° 4°</td><td>QUESSI, Francesca</td><td>Botta, Romina / Gorosito, Nélida</td><td>2342401792</td></tr>
+        <tr><td>6° 4°</td><td>RAGO, Francesca</td><td>Botta, Romina / Gorosito, Nélida</td><td>2342509425</td></tr>
+        <tr><td>6° 4°</td><td>RICCI, Nicole</td><td>Botta, Romina / Gorosito, Nélida</td><td>2342532952</td></tr>
+        <tr><td>6° 4°</td><td>ROSALES, Ignacio Joaquín</td><td>Botta, Romina / Gorosito, Nélida</td><td>2657353759</td></tr>
+        <tr><td>6° 4°</td><td>SOSA, Brandon</td><td>Botta, Romina / Gorosito, Nélida</td><td>2342455994</td></tr>
+        <tr><td>6° 4°</td><td>VILLA, Santiago</td><td>Botta, Romina / Gorosito, Nélida</td><td>2342499084</td></tr>        
       </tbody>
     </table>
   </section>
@@ -990,6 +1002,27 @@
     <h2>⚙️ Gestión de Accesos (Directivo)</h2>
     <p>Para conceder, denegar o modificar accesos de docentes, ingresá directamente a tu panel de control de <strong>Supabase</strong> sección <code>Authentication -> Users</code>.</p>
   </section>
+
+  <!-- Script de filtrado -->
+<script>
+  function buscarAlumnos() {
+    const input = document.getElementById('inputBuscadorAlumnos');
+    const filter = input.value.toLowerCase();
+    const table = document.getElementById('tablaAlumnos');
+    const trs = table.getElementsByTagName('tr');
+
+    for (let i = 1; i < trs.length; i++) {
+      const tr = trs[i];
+      const textContent = tr.textContent || tr.innerText;
+      
+      if (textContent.toLowerCase().indexOf(filter) > -1) {
+        tr.style.display = '';
+      } else {
+        tr.style.display = 'none';
+      }
+    }
+  }
+</script>
 
 </main>
 
