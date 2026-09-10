@@ -373,15 +373,50 @@
 <section id="alumnos" class="tab-content">
   <h2>👥 Listado de Alumnos y Contactos de Emergencia</h2>
 
-  <!-- Buscador -->
-  <div style="margin-bottom: 15px;">
-    <input 
-      type="text" 
-      id="inputBuscadorAlumnos" 
-      onkeyup="buscarAlumnos()" 
-      placeholder="🔍 Buscar por año, alumno, adulto o teléfono..." 
-      style="width: 100%; padding: 10px; font-size: 16px; border: 1px solid #ccc; border-radius: 6px;"
-    >
+  <!-- Contenedor de Filtros -->
+  <div style="display: flex; gap: 10px; flex-wrap: wrap; margin-bottom: 15px;">
+    
+    <!-- Filtro por Apellido -->
+    <div style="flex: 2; min-width: 200px;">
+      <input 
+        type="text" 
+        id="inputBuscadorAlumnos" 
+        onkeyup="filtrarAlumnos()" 
+        placeholder="🔍 Buscar por apellido del alumno..." 
+        style="width: 100%; padding: 10px; font-size: 15px; border: 1px solid #ccc; border-radius: 6px;"
+      >
+    </div>
+
+    <!-- Filtro por Año -->
+    <div style="flex: 1; min-width: 120px;">
+      <select 
+        id="selectAnio" 
+        onchange="filtrarAlumnos()" 
+        style="width: 100%; padding: 10px; font-size: 15px; border: 1px solid #ccc; border-radius: 6px;"
+      >
+        <option value="">Todos los Años</option>
+        <option value="1°">1° Año</option>
+        <option value="2°">2° Año</option>
+        <option value="3°">3° Año</option>
+        <option value="4°">4° Año</option>
+        <option value="5°">5° Año</option>
+        <option value="6°">6° Año</option>
+      </select>
+    </div>
+
+    <!-- Filtro por Sección -->
+    <div style="flex: 1; min-width: 120px;">
+      <select 
+        id="selectSeccion" 
+        onchange="filtrarAlumnos()" 
+        style="width: 100%; padding: 10px; font-size: 15px; border: 1px solid #ccc; border-radius: 6px;"
+      >
+        <option value="">Todas las Secciones</option>
+        <option value="1ª">1ª Sección</option>
+        <option value="2ª">2ª Sección</option>
+      </select>
+    </div>
+
   </div>
 
   <table id="tablaAlumnos">
@@ -1003,27 +1038,45 @@
     <p>Para conceder, denegar o modificar accesos de docentes, ingresá directamente a tu panel de control de <strong>Supabase</strong> sección <code>Authentication -> Users</code>.</p>
   </section>
 
-  <!-- Script de filtrado -->
+  <!-- Script de filtrado combinado (Apellido, Año y Sección) -->
 <script>
-  function buscarAlumnos() {
-    const input = document.getElementById('inputBuscadorAlumnos');
-    const filter = input.value.toLowerCase();
+  function filtrarAlumnos() {
+    // Captura los valores de los 3 controles
+    const inputApellido = document.getElementById('inputBuscadorAlumnos').value.toLowerCase().trim();
+    const valAnio = document.getElementById('selectAnio').value.toLowerCase();
+    const valSeccion = document.getElementById('selectSeccion').value.toLowerCase();
+
     const table = document.getElementById('tablaAlumnos');
     const trs = table.getElementsByTagName('tr');
 
     for (let i = 1; i < trs.length; i++) {
       const tr = trs[i];
-      const textContent = tr.textContent || tr.innerText;
-      
-      if (textContent.toLowerCase().indexOf(filter) > -1) {
-        tr.style.display = '';
-      } else {
-        tr.style.display = 'none';
+      const tdCurso = tr.getElementsByTagName('td')[0];  // Columna 1: "Año / Sec." (ej: "1° 1ª")
+      const tdAlumno = tr.getElementsByTagName('td')[1]; // Columna 2: "Alumno" (ej: "ALIANO, Clara")
+
+      if (tdCurso && tdAlumno) {
+        const textoCurso = (tdCurso.textContent || tdCurso.innerText).toLowerCase();
+        const textoAlumno = tdAlumno.textContent || tdAlumno.innerText;
+        
+        // Extrae solo el apellido (parte antes de la coma)
+        const apellido = textoAlumno.split(',')[0].toLowerCase();
+
+        // Validaciones individuales
+        const coincideApellido = apellido.includes(inputApellido);
+        const coincideAnio = valAnio === "" || textoCurso.includes(valAnio);
+        const coincideSeccion = valSeccion === "" || textoCurso.includes(valSeccion);
+
+        // Muestra la fila si cumple los 3 criterios
+        if (coincideApellido && coincideAnio && coincideSeccion) {
+          tr.style.display = '';
+        } else {
+          tr.style.display = 'none';
+        }
       }
     }
   }
 </script>
-
+  
 </main>
 
 <script>
