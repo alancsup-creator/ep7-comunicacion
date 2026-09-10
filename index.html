@@ -179,7 +179,7 @@
       <input 
         type="text" 
         id="buscarDocente" 
-        placeholder="Escribí tu apellido (ej: Perafán, Csup, Chavez)..." 
+        placeholder="Escribí tu apellido (ej: Perafán, Santillan, Aragonés )..." 
         onkeyup="filtrarDocenteRecreo()"
         style="width: 100%; padding: 10px; border-radius: 6px; border: 1px solid #ccc; font-size: 15px;"
       >
@@ -426,92 +426,88 @@
     const input = document.getElementById('buscarDocente');
     const filter = input.value.toLowerCase().trim();
     const contenedorResultados = document.getElementById('resultadoBusqueda');
-    const secciones = document.querySelectorAll('#cronograma table');
+    const tablas = document.querySelectorAll('#cronograma table');
 
-    // Limpiar búsquedas previas
+    // Limpiar resultados
     contenedorResultados.innerHTML = '';
     contenedorResultados.style.display = 'none';
 
-    // Restaurar visibilidad normal de las tablas si el campo está vacío
-    if (filter === '') {
-      secciones.forEach(table => {
-        table.querySelectorAll('tbody tr').forEach(row => {
-          row.style.display = '';
-          row.style.backgroundColor = '';
-        });
-      });
-      return;
-    }
+    if (filter === '') return;
 
-    let coincidencias = [];
+    // Estructura para agrupar por día
+    const diasSemana = ['Lunes', 'Martes', 'Miércoles', 'Jueves', 'Viernes'];
+    const agendaPorDia = {
+      'Lunes': [],
+      'Martes': [],
+      'Miércoles': [],
+      'Jueves': [],
+      'Viernes': []
+    };
 
-    // Recorrer cada tabla (Mañana / Tarde / Ciclos)
-    secciones.forEach(table => {
-      // Obtener el título del turno/ciclo que está justo arriba de la tabla
-      const tituloCiclo = table.closest('div').previousElementSibling?.textContent || 'Cronograma';
+    tablas.forEach(table => {
       const rows = table.querySelectorAll('tbody tr');
       let horarioActual = '';
 
       rows.forEach(row => {
-        // Si la fila contiene una celda de horario (con rowspan), actualizamos el horario de referencia
+        // Detectar celda de horario (rowspan)
         const celdaHorario = row.querySelector('td[rowspan]');
         if (celdaHorario) {
-          horarioActual = celdaHorario.innerText.replace('\n', ' ');
+          horarioActual = celdaHorario.innerText.replace('\n', ' ').trim();
         }
 
         const celdas = row.querySelectorAll('td');
         if (celdas.length >= 2) {
-          // Determinar la celda del lugar según la estructura de la fila
           const celdaLugar = celdaHorario ? celdas[1] : celdas[0];
-          const lugar = celdaLugar ? celdaLugar.innerText : '';
+          const lugar = celdaLugar ? celdaLugar.innerText.replace('\n', ' ').trim() : '';
+          const offset = celdaHorario ? 2 : 1;
 
-          // Días de la semana en orden de columnas
-          const dias = ['Lunes', 'Martes', 'Miércoles', 'Jueves', 'Viernes'];
-          const offset = celdaHorario ? 2 : 1; // Ajuste según presencia de la celda de horario
-
-          dias.forEach((dia, index) => {
+          diasSemana.forEach((dia, index) => {
             const celdaDia = celdas[index + offset];
             if (celdaDia && celdaDia.innerText.toLowerCase().includes(filter)) {
-              coincidencias.push({
-                ciclo: tituloCiclo,
-                horario: horarioActual,
-                lugar: lugar,
-                dia: dia,
-                texto: celdaDia.innerText
+              
+              // Extraer aclaraciones de zona o especificaciones si las hay en la celda
+              let detalleAsignacion = '';
+              const lineas = celdaDia.innerText.split('\n');
+              lineas.forEach(linea => {
+                if (linea.toLowerCase().includes(filter)) {
+                  // Si tiene especificación de zona entre paréntesis (ej: Zona 4)
+                  const matchZona = linea.match(/\(([^)]+)\)/);
+                  if (matchZona) {
+                    detalleAsignacion = ` (${matchZona[1]})`;
+                  }
+                }
               });
+
+              agendaPorDia[dia].push(`de ${horarioActual} ${lugar}${detalleAsignacion}`);
             }
           });
         }
       });
     });
 
-    // Mostrar los resultados procesados en pantalla
-    if (coincidencias.length > 0) {
+    // Construir la vista ordenada por día
+    let hayCoincidencias = false;
+    let htmlResultados = `<div style="background: #ffffff; padding: 15px; border-radius: 8px; border-left: 5px solid #2563eb; box-shadow: 0 2px 5px rgba(0,0,0,0.1); font-size: 14px; line-height: 1.6;">`;
+    htmlResultados += `<h4 style="margin: 0 0 10px 0; color: #1e293b; font-size: 15px;">📅 Horario asignado para "${input.value}":</h4>`;
+
+    diasSemana.forEach(dia => {
+      if (agendaPorDia[dia].length > 0) {
+        hayCoincidencias = true;
+        htmlResultados += `<p style="margin: 6px 0; color: #334155;"><strong>${dia}:</strong> ${agendaPorDia[dia].join(', ')}.</p>`;
+      }
+    });
+
+    htmlResultados += `</div>`;
+
+    if (hayCoincidencias) {
       contenedorResultados.style.display = 'block';
-      let html = `<h4 style="color: var(--primary); margin-bottom: 10px;">Resultados encontrados (${coincidencias.length}):</h4>`;
-      html += `<div style="display: grid; gap: 10px; max-height: 300px; overflow-y: auto;">`;
-
-      coincidencias.forEach(item => {
-        html += `
-          <div style="background: white; padding: 10px 14px; border-radius: 6px; border-left: 5px solid var(--accent); box-shadow: 0 1px 3px rgba(0,0,0,0.1);">
-            <div style="font-weight: bold; color: var(--primary-dark); font-size: 14px;">${item.dia} — ${item.horario}</div>
-            <div style="font-size: 13px; color: #475569; margin-top: 2px;">
-              📍 <strong>Lugar:</strong> ${item.lugar} <br>
-              🏫 <strong>Turno/Ciclo:</strong> ${item.ciclo} <br>
-              👤 <strong>Asignación:</strong> ${item.texto}
-            </div>
-          </div>
-        `;
-      });
-
-      html += `</div>`;
-      contenedorResultados.innerHTML = html;
+      contenedorResultados.innerHTML = htmlResultados;
     } else {
       contenedorResultados.style.display = 'block';
-      contenedorResultados.innerHTML = `<p style="color: var(--danger); font-size: 14px; margin: 0;">No se encontraron turnos de cuidado para "${input.value}".</p>`;
+      contenedorResultados.innerHTML = `<p style="color: #dc2626; font-size: 14px; margin: 0;">No se encontraron asignaciones para "${input.value}".</p>`;
     }
   }
-
+  
   // 4. Autenticación con Supabase
   async function handleLogin(e) {
     e.preventDefault();
