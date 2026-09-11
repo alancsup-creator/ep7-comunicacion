@@ -45,33 +45,16 @@
   .nav-item { padding: 14px 20px; cursor: pointer; display: flex; align-items: center; gap: 12px; font-size: 15px; transition: background 0.2s; }
   .nav-item:hover, .nav-item.active { background: rgba(255,255,255,0.1); border-left: 4px solid var(--accent); }
 
-  <!-- Contenedor de Autenticación -->
-<div class="login-container" id="authContainer">
-  <div class="login-card">
-    <h2 id="authTitle">Acceso Docente</h2>
-    
-    <div class="form-group">
-      <label for="authEmail">Correo Electrónico</label>
-      <input type="email" id="authEmail" placeholder="docente@ep7.edu.ar" required>
-    </div>
-
-    <div class="form-group">
-      <label for="authPassword">Contraseña</label>
-      <input type="password" id="authPassword" placeholder="••••••••" required>
-    </div>
-
-    <!-- AMBOS BOTONES VAN AQUÍ DENTRO DE LA TARJETA -->
-    <button class="btn-submit" type="button" id="btnLogin" onclick="iniciarSesion()">
-      Ingresar
-    </button>
-    
-    <button class="btn-submit" type="button" id="btnRegister" onclick="registrarUsuario()" style="background: var(--accent); margin-top: 8px;">
-      Registrarse
-    </button>
-
-    <p class="error-msg" id="authError"></p>
-  </div>
-</div>
+  /* Vista de Autenticación */
+  .login-container { display: flex; justify-content: center; align-items: center; min-height: 80vh; padding: 20px; }
+  .login-card { background: var(--card); border: 1px solid var(--border); border-radius: 12px; padding: 24px; width: 100%; max-width: 360px; box-shadow: 0 4px 6px -1px rgba(0,0,0,0.1); }
+  .login-card h2 { margin-bottom: 16px; font-size: 20px; text-align: center; color: var(--primary); }
+  .form-group { margin-bottom: 14px; }
+  .form-group label { display: block; font-size: 13px; font-weight: 600; margin-bottom: 4px; }
+  .form-group input { width: 100%; padding: 10px; border: 1px solid var(--border); border-radius: 6px; font-size: 14px; }
+  .btn-submit { width: 100%; background: var(--primary); color: white; border: none; padding: 12px; border-radius: 6px; font-weight: 600; cursor: pointer; margin-top: 8px; }
+  .btn-submit:disabled { opacity: 0.6; cursor: not-allowed; }
+  .error-msg { color: var(--danger); font-size: 13px; margin-top: 8px; text-align: center; display: none; }
 
   /* Contenido Principal Protegido */
   main { padding: 20px; max-width: 1000px; margin: 0 auto; width: 100%; flex: 1; display: none; }
@@ -121,11 +104,8 @@
 
 <!-- Pantalla de Login -->
 <section class="login-container" id="loginSection">
-  <!-- Reemplaza el botón de registro que tengas dentro de .login-card por este -->
-<button class="btn-submit" type="button" onclick="registrarUsuario()" style="background: var(--accent); margin-top: 6px;">
-  Registrarse
-</button>
-  <h2>Acceso Docente</h2>
+  <div class="login-card">
+    <h2>Acceso Docente</h2>
     <form id="loginForm" onsubmit="handleLogin(event)">
       <div class="form-group">
         <label>Correo Electrónico</label>
@@ -1107,44 +1087,6 @@
 
   const supabaseClient = supabase.createClient(SUPABASE_URL, SUPABASE_ANON_KEY);
 
-  async function registrarUsuario() {
-    const email = document.getElementById('authEmail').value.trim();
-    const password = document.getElementById('authPassword').value.trim();
-    const errorMsg = document.getElementById('authError');
-
-    if (errorMsg) {
-      errorMsg.innerText = '';
-      errorMsg.style.display = 'block';
-    }
-
-    if (!email || !password) {
-      if (errorMsg) errorMsg.innerText = 'Por favor, ingresa un correo y una contraseña.';
-      return;
-    }
-
-    if (password.length < 6) {
-      if (errorMsg) errorMsg.innerText = 'La contraseña debe tener al menos 6 caracteres.';
-      return;
-    }
-
-    const { data, error } = await supabaseClient.auth.signUp({
-      email: email,
-      password: password
-    });
-
-    if (error) {
-      if (errorMsg) {
-        errorMsg.style.color = 'var(--danger)';
-        errorMsg.innerText = 'Error al registrar: ' + error.message;
-      }
-    } else {
-      if (errorMsg) {
-        errorMsg.style.color = '#16a34a';
-        errorMsg.innerText = '¡Usuario creado con éxito! Ingresando...';
-      }
-    }
-  }
-  
   // Control del Drawer (Menú Desplegable)
   const drawer = document.getElementById('drawer');
   const overlay = document.getElementById('overlay');
