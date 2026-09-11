@@ -1087,6 +1087,44 @@
 
   const supabaseClient = supabase.createClient(SUPABASE_URL, SUPABASE_ANON_KEY);
 
+  async function registrarUsuario() {
+    const email = document.getElementById('authEmail').value.trim();
+    const password = document.getElementById('authPassword').value.trim();
+    const errorMsg = document.getElementById('authError');
+
+    if (errorMsg) {
+      errorMsg.innerText = '';
+      errorMsg.style.display = 'block';
+    }
+
+    if (!email || !password) {
+      if (errorMsg) errorMsg.innerText = 'Por favor, ingresa un correo y una contraseña.';
+      return;
+    }
+
+    if (password.length < 6) {
+      if (errorMsg) errorMsg.innerText = 'La contraseña debe tener al menos 6 caracteres.';
+      return;
+    }
+
+    const { data, error } = await supabaseClient.auth.signUp({
+      email: email,
+      password: password
+    });
+
+    if (error) {
+      if (errorMsg) {
+        errorMsg.style.color = 'var(--danger)';
+        errorMsg.innerText = 'Error al registrar: ' + error.message;
+      }
+    } else {
+      if (errorMsg) {
+        errorMsg.style.color = '#16a34a';
+        errorMsg.innerText = '¡Usuario creado con éxito! Ingresando...';
+      }
+    }
+  }
+  
   // Control del Drawer (Menú Desplegable)
   const drawer = document.getElementById('drawer');
   const overlay = document.getElementById('overlay');
