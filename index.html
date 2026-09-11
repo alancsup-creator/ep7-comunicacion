@@ -104,8 +104,11 @@
 
 <!-- Pantalla de Login -->
 <section class="login-container" id="loginSection">
-  <div class="login-card">
-    <h2>Acceso Docente</h2>
+  <!-- Reemplaza el botón de registro que tengas dentro de .login-card por este -->
+<button class="btn-submit" type="button" onclick="registrarUsuario()" style="background: var(--accent); margin-top: 6px;">
+  Registrarse
+</button>
+  <h2>Acceso Docente</h2>
     <form id="loginForm" onsubmit="handleLogin(event)">
       <div class="form-group">
         <label>Correo Electrónico</label>
