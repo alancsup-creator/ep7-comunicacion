@@ -1225,34 +1225,127 @@
   }
   
   // 4. Autenticación con Supabase
-  async function handleLogin(e) {
-    e.preventDefault();
-    const email = document.getElementById('username').value;
-    const password = document.getElementById('password').value;
-    const loginBtn = document.getElementById('loginBtn');
-    const errorMsg = document.getElementById('errorMsg');
+  let esModoRegistro = false;
 
-    loginBtn.innerText = "Verificando...";
-    loginBtn.disabled = true;
-    errorMsg.style.display = 'none';
+function toggleModoRegistro() {
+  esModoRegistro = !esModoRegistro;
+  
+  const groupNombre = document.getElementById('groupNombre');
+  const loginBtn = document.getElementById('loginBtn');
+  const btnToggle = document.getElementById('btnToggleAuth');
+  const authTitle = document.getElementById('authTitle');
+  const errorMsg = document.getElementById('errorMsg');
 
-    const { data, error } = await supabaseClient.auth.signInWithPassword({
-      email: email,
-      password: password,
-    });
+  if (errorMsg) errorMsg.style.display = 'none';
 
-    loginBtn.innerText = "Ingresar";
-    loginBtn.disabled = false;
+  if (esModoRegistro) {
+    if (authTitle) authTitle.innerText = 'Registro de Docente';
+    if (groupNombre) groupNombre.style.display = 'block';
+    if (loginBtn) {
+      loginBtn.innerText = 'Crear Cuenta';
+      loginBtn.style.background = 'var(--accent, #0284c7)';
+    }
+    if (btnToggle) btnToggle.innerText = '¿Ya tenés cuenta? Iniciá sesión';
+  } else {
+    if (authTitle) authTitle.innerText = 'Acceso Docente';
+    if (groupNombre) groupNombre.style.display = 'none';
+    if (loginBtn) {
+      loginBtn.innerText = 'Ingresar';
+      loginBtn.style.background = 'var(--primary, #1e3a8a)';
+    }
+    if (btnToggle) btnToggle.innerText = '¿No tenés cuenta? Registrate acá';
+  }
+}
 
-    if (error) {
+async function handleAuthSubmit(e) {
+  e.preventDefault();
+  if (esModoRegistro) {
+    await registrarUsuario();
+  } else {
+    await ejecutarLogin();
+  }
+}
+
+async function ejecutarLogin() {
+  const email = document.getElementById('username').value.trim();
+  const password = document.getElementById('password').value.trim();
+  const loginBtn = document.getElementById('loginBtn');
+  const errorMsg = document.getElementById('errorMsg');
+
+  loginBtn.innerText = "Verificando...";
+  loginBtn.disabled = true;
+  if (errorMsg) errorMsg.style.display = 'none';
+
+  const { data, error } = await supabaseClient.auth.signInWithPassword({
+    email: email,
+    password: password,
+  });
+
+  loginBtn.innerText = "Ingresar";
+  loginBtn.disabled = false;
+
+  if (error) {
+    if (errorMsg) {
       errorMsg.innerText = "Acceso denegado: " + error.message;
       errorMsg.style.display = 'block';
-      return;
     }
-
-    setAuthenticatedUser(data.user.email);
+    return;
   }
 
+  setAuthenticatedUser(data.user.email);
+}
+
+async function registrarUsuario() {
+  const nombreInput = document.getElementById('authNombre');
+  const nombre = nombreInput ? nombreInput.value.trim() : '';
+  const email = document.getElementById('username').value.trim().toLowerCase();
+  const password = document.getElementById('password').value.trim();
+  const loginBtn = document.getElementById('loginBtn');
+
+  if (!nombre || !email || !password) {
+    mostrarMensajeError('Por favor, completá todos los campos.');
+    return;
+  }
+
+  if (!email.endsWith('@ep7.com')) {
+    mostrarMensajeError('El correo debe terminar obligatoriamente en @ep7.com');
+    return;
+  }
+
+  if (password.length < 6) {
+    mostrarMensajeError('La contraseña debe tener al menos 6 caracteres.');
+    return;
+  }
+
+  loginBtn.innerText = "Registrando...";
+  loginBtn.disabled = true;
+
+  const { data, error } = await supabaseClient.auth.signUp({
+    email: email,
+    password: password,
+    options: {
+      data: { nombre_completo: nombre }
+    }
+  });
+
+  loginBtn.innerText = "Crear Cuenta";
+  loginBtn.disabled = false;
+
+  if (error) {
+    mostrarMensajeError('Error al registrar: ' + error.message);
+  } else if (data.user) {
+    setAuthenticatedUser(data.user.email);
+  }
+}
+
+function mostrarMensajeError(msg) {
+  const errorMsg = document.getElementById('errorMsg');
+  if (errorMsg) {
+    errorMsg.style.color = 'var(--danger, #ef4444)';
+    errorMsg.style.display = 'block';
+    errorMsg.innerText = msg;
+  }
+}
   function setAuthenticatedUser(email) {
     document.getElementById('loginSection').style.display = 'none';
     document.getElementById('mainContent').classList.add('authenticated');
