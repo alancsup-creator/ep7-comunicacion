@@ -386,14 +386,34 @@
     <p>Planillas de evaluación continua y entregas de RITE.</p>
   </section>
 
-  <!-- Pestaña 5: Fechas Importantes -->
-  <section id="fechas" class="tab-content">
-    <h2>📅 Fechas Importantes y Agenda</h2>
-    <ul>
-      <li><strong>15/09:</strong> Reunión de personal.</li>
-      <li><strong>21/09:</strong> Jornada de evaluación institucional.</li>
-    </ul>
-  </section>
+<!-- Pestaña 5: Fechas Importantes -->
+<div id="tab5" class="tab-content">
+  <h3>📅 Fechas Importantes y Recordatorios</h3>
+
+  <!-- Panel de Alta (Solo visible para el Director) -->
+  <div id="adminFechasForm" style="display: none; background: #f8fafc; padding: 15px; border-radius: 8px; margin-bottom: 20px; border: 1px solid #e2e8f0;">
+    <h4 style="margin-top: 0; color: #1e293b;">Agregar Nuevo Recordatorio</h4>
+    <form onsubmit="guardarFechaImportante(event)">
+      <div style="margin-bottom: 10px;">
+        <label style="display: block; font-size: 12px; font-weight: 600;">Fecha / Título</label>
+        <input type="text" id="fechaTitulo" placeholder="Ej: 25 de Mayo - Acto Escolar" required style="width: 100%; padding: 8px; border-radius: 4px; border: 1px solid #ccc;">
+      </div>
+      <div style="margin-bottom: 10px;">
+        <label style="display: block; font-size: 12px; font-weight: 600;">Nota / Detalle</label>
+        <textarea id="fechaDetalle" placeholder="Ej: Traer escarapelas. Turno mañana organiza el discurso." rows="3" required style="width: 100%; padding: 8px; border-radius: 4px; border: 1px solid #ccc;"></textarea>
+      </div>
+      <button type="submit" style="background: #2563eb; color: white; border: none; padding: 8px 16px; border-radius: 4px; font-weight: 600; cursor: pointer;">
+        Publicar Recordatorio
+      </button>
+    </form>
+  </div>
+
+  <!-- Lista donde se cargan las fechas -->
+  <div id="listaFechasImportantes">
+    <p style="color: #64748b;">Cargando fechas...</p>
+  </div>
+</div>
+
 
   <!-- Pestaña 6: Listado de Alumnos con Teléfonos -->
 <section id="alumnos" class="tab-content">
@@ -1365,6 +1385,125 @@ function mostrarMensajeError(msg) {
     closeMenu();
   }
 
+  // 1. Modificá tu función setAuthenticatedUser existente agregando la última línea:
+function setAuthenticatedUser(email) {
+  document.getElementById('loginSection').style.display = 'none';
+  document.getElementById('mainContent').classList.add('authenticated');
+  document.getElementById('userStatus').innerText = email;
+
+  if (email.includes('director') || email.includes('admin')) {
+    document.getElementById('adminTab').style.display = 'flex';
+  }
+
+  // AGREGÁ ESTA LÍNEA ACÁ PARA ACTIVAR LA PESTAÑA 5:
+  verificarPermisosDirector(email);
+}
+
+
+// =========================================================
+// 2. PEGÁ TODO ESTE BLOQUE NUEVO JUSTO DEBAJO DE LO ANTERIOR:
+// =========================================================
+
+let esDirector = false;
+
+// Activa el formulario si sos el director
+function verificarPermisosDirector(userEmail) {
+  esDirector = (userEmail.toLowerCase() === 'acsup@ep7.com');
+
+  const adminForm = document.getElementById('adminFechasForm');
+  if (adminForm) {
+    adminForm.style.display = esDirector ? 'block' : 'none';
+  }
+
+  cargarFechasImportantes();
+}
+
+// Cargar la lista de fechas desde Supabase
+async function cargarFechasImportantes() {
+  const contenedor = document.getElementById('listaFechasImportantes');
+  if (!contenedor) return;
+
+  const { data, error } = await supabaseClient
+    .from('fechas_importantes')
+    .select('*')
+    .order('created_at', { ascending: false });
+
+  if (error) {
+    console.error('Error al cargar fechas:', error);
+    contenedor.innerHTML = '<p style="color: #ef4444;">Error al cargar las fechas.</p>';
+    return;
+  }
+
+  if (!data || data.length === 0) {
+    contenedor.innerHTML = '<p style="color: #64748b;">No hay recordatorios registrados por el momento.</p>';
+    return;
+  }
+
+  contenedor.innerHTML = '';
+  data.forEach((item) => {
+    const card = document.createElement('div');
+    card.style.cssText = 'background: white; border-left: 4px solid #2563eb; padding: 12px; margin-bottom: 10px; border-radius: 4px; box-shadow: 0 1px 3px rgba(0,0,0,0.1); display: flex; justify-content: space-between; align-items: flex-start;';
+
+    let botonEliminar = '';
+    if (esDirector) {
+      botonEliminar = `<button onclick="eliminarFechaImportante(${item.id})" style="background: transparent; color: #ef4444; border: none; font-weight: bold; cursor: pointer; padding: 0 4px;">❌</button>`;
+    }
+
+    card.innerHTML = `
+      <div>
+        <h4 style="margin: 0 0 4px 0; color: #0f172a;">${item.titulo}</h4>
+        <p style="margin: 0; color: #475569; font-size: 14px; white-space: pre-line;">${item.detalle}</p>
+      </div>
+      ${botonEliminar}
+    `;
+
+    contenedor.appendChild(card);
+  });
+}
+
+// Guardar nueva fecha en Supabase
+async function guardarFechaImportante(e) {
+  e.preventDefault();
+
+  if (!esDirector) {
+    alert("No tenés permisos para publicar recordatorios.");
+    return;
+  }
+
+  const titulo = document.getElementById('fechaTitulo').value.trim();
+  const detalle = document.getElementById('fechaDetalle').value.trim();
+
+  const { error } = await supabaseClient
+    .from('fechas_importantes')
+    .insert([{ titulo, detalle }]);
+
+  if (error) {
+    alert("Error al guardar: " + error.message);
+  } else {
+    document.getElementById('fechaTitulo').value = '';
+    document.getElementById('fechaDetalle').value = '';
+    cargarFechasImportantes();
+  }
+}
+
+// Eliminar fecha de Supabase
+async function eliminarFechaImportante(id) {
+  if (!esDirector) return;
+
+  if (confirm("¿Seguro que querés eliminar este recordatorio?")) {
+    const { error } = await supabaseClient
+      .from('fechas_importantes')
+      .delete()
+      .eq('id', id);
+
+    if (error) {
+      alert("Error al eliminar: " + error.message);
+    } else {
+      cargarFechasImportantes();
+    }
+  }
+}
+  
   // 5. Verificación de sesión al cargar
   window.addEventListener('load', async () => {
     const { data: { session } } = await supabaseClient.auth.getSession();
