@@ -386,34 +386,14 @@
     <p>Planillas de evaluación continua y entregas de RITE.</p>
   </section>
 
-<!-- Pestaña 5: Fechas Importantes -->
-<div id="tab5" class="tab-content" style="display: none;">
-  <h3>📅 Fechas Importantes y Recordatorios</h3>
-
-  <!-- Panel de administración (Visible solo para acsup@ep7.com) -->
-  <div id="adminFechasForm" style="display: none; background-color: #f8fafc; padding: 15px; border-radius: 8px; margin-bottom: 20px; border: 1px solid #e2e8f0;">
-    <h4 style="margin-top: 0; color: #1e293b;">Agregar Nuevo Recordatorio</h4>
-    <form id="formNuevaFecha" onsubmit="guardarFechaImportante(event)">
-      <div style="margin-bottom: 10px;">
-        <label for="fechaTitulo" style="display: block; font-size: 12px; font-weight: 600; margin-bottom: 4px;">Fecha / Título</label>
-        <input type="text" id="fechaTitulo" placeholder="Ej: 25 de Mayo - Acto Escolar" required style="width: 100%; padding: 8px; border-radius: 4px; border: 1px solid #ccc; box-sizing: border-box;">
-      </div>
-      <div style="margin-bottom: 10px;">
-        <label for="fechaDetalle" style="display: block; font-size: 12px; font-weight: 600; margin-bottom: 4px;">Nota / Detalle</label>
-        <textarea id="fechaDetalle" placeholder="Ej: Traer escarapelas. Turno mañana organiza el discurso." rows="3" required style="width: 100%; padding: 8px; border-radius: 4px; border: 1px solid #ccc; box-sizing: border-box;"></textarea>
-      </div>
-      <button type="submit" style="background-color: #2563eb; color: #ffffff; border: none; padding: 8px 16px; border-radius: 4px; font-weight: 600; cursor: pointer;">
-        Publicar Recordatorio
-      </button>
-    </form>
-  </div>
-
-  <!-- Contenedor dinámico de notas/recordatorios -->
-  <div id="listaFechasImportantes">
-    <p style="color: #64748b;">Cargando recordatorios...</p>
-  </div>
-</div>
-
+  <!-- Pestaña 5: Fechas Importantes -->
+  <section id="fechas" class="tab-content">
+    <h2>📅 Fechas Importantes y Agenda</h2>
+    <ul>
+      <li><strong>15/09:</strong> Reunión de personal.</li>
+      <li><strong>21/09:</strong> Jornada de evaluación institucional.</li>
+    </ul>
+  </section>
 
   <!-- Pestaña 6: Listado de Alumnos con Teléfonos -->
 <section id="alumnos" class="tab-content">
@@ -1151,54 +1131,13 @@
   overlay.addEventListener('click', closeMenu);
 
   function switchTab(tabId) {
-  // Ocultar todas las pestañas
-  const tabs = document.querySelectorAll('.tab-content');
-  tabs.forEach(tab => {
-    tab.style.display = 'none';
-    tab.classList.remove('active');
-  });
-
-  // Remover clase active del menú si existen
-  const navItems = document.querySelectorAll('.nav-link, .menu-item');
-  navItems.forEach(item => item.classList.remove('active'));
-
-  // Buscar la pestaña requerida (soporta 'tab5' o 'tab-5')
-  const targetTab = document.getElementById(tabId) || document.getElementById(tabId.replace('-', ''));
-  
-  if (!targetTab) {
-    console.error(`Error: La pestaña con id "${tabId}" no existe en el DOM.`);
-    return;
-  }
-
-  // Mostrar la pestaña
-  targetTab.style.display = 'block';
-  targetTab.classList.add('active');
-
-  // Si se entra a la pestaña 5, cargar datos y verificar permisos
-  if (tabId === 'tab5' || tabId === 'tab-5') {
-    verificarPermisosAdmin();
-    renderizarFechas();
-  }
-}
-
-    // 3. Buscar el elemento objetivo
-    const targetTab = document.getElementById(tabId);
+    document.querySelectorAll('.tab-content').forEach(tab => tab.classList.remove('active'));
+    document.querySelectorAll('.nav-item').forEach(item => item.classList.remove('active'));
     
-    // VALIDACIÓN CLAVE: Evita que la app se rompa si el ID no se encuentra
-    if (!targetTab) {
-        console.error(`La pestaña con ID "${tabId}" no existe en el HTML.`);
-        return;
-    }
+    document.getElementById(tabId).classList.add('active');
+    closeMenu();
+  }
 
-    // 4. Mostrar la pestaña seleccionada
-    targetTab.classList.remove('d-none');
-    targetTab.classList.add('active');
-
-    // 5. Opcional: Activar el botón correspondiente si pasa el event
-    if (event && event.currentTarget) {
-        event.currentTarget.classList.add('active');
-    }
-}
   function filtrarDocenteRecreo() {
     const input = document.getElementById('buscarDocente');
     const filter = input.value.toLowerCase().trim();
@@ -1426,131 +1365,6 @@ function mostrarMensajeError(msg) {
     closeMenu();
   }
 
-  // 1. Modificá tu función setAuthenticatedUser existente agregando la última línea:
-function setAuthenticatedUser(email) {
-  document.getElementById('loginSection').style.display = 'none';
-  document.getElementById('mainContent').classList.add('authenticated');
-  document.getElementById('userStatus').innerText = email;
-
-  if (email.includes('director') || email.includes('admin')) {
-    document.getElementById('adminTab').style.display = 'flex';
-  }
-
-  // AGREGÁ ESTA LÍNEA ACÁ PARA ACTIVAR LA PESTAÑA 5:
-  verificarPermisosDirector(email);
-}
-
-
-// =========================================================
-// 2. PEGÁ TODO ESTE BLOQUE NUEVO JUSTO DEBAJO DE LO ANTERIOR:
-// =========================================================
-
-let esDirector = false;
-
-// Determina los permisos al iniciar sesión
-function verificarPermisosDirector(userEmail) {
-  if (!userEmail) return;
-  
-  esDirector = (userEmail.toLowerCase() === 'acsup@ep7.com');
-
-  const adminForm = document.getElementById('adminFechasForm');
-  if (adminForm) {
-    adminForm.style.display = esDirector ? 'block' : 'none';
-  }
-
-  cargarFechasImportantes();
-}
-
-// Cargar fechas evitando que la app se cuelgue en blanco
-async function cargarFechasImportantes() {
-  const contenedor = document.getElementById('listaFechasImportantes');
-  if (!contenedor) return;
-
-  contenedor.innerHTML = '<p style="color: #64748b;">Cargando recordatorios...</p>';
-
-  try {
-    const { data, error } = await supabaseClient
-      .from('fechas_importantes')
-      .select('*')
-      .order('created_at', { ascending: false });
-
-    if (error) throw error;
-
-    if (!data || data.length === 0) {
-      contenedor.innerHTML = '<p style="color: #64748b;">No hay recordatorios registrados por el momento.</p>';
-      return;
-    }
-
-    contenedor.innerHTML = '';
-    data.forEach((item) => {
-      const card = document.createElement('div');
-      card.style.cssText = 'background: white; border-left: 4px solid #2563eb; padding: 12px; margin-bottom: 10px; border-radius: 4px; box-shadow: 0 1px 3px rgba(0,0,0,0.1); display: flex; justify-content: space-between; align-items: flex-start;';
-
-      let botonEliminar = '';
-      if (esDirector) {
-        botonEliminar = `<button onclick="eliminarFechaImportante(${item.id})" style="background: transparent; color: #ef4444; border: none; font-weight: bold; cursor: pointer; padding: 0 4px;">❌</button>`;
-      }
-
-      card.innerHTML = `
-        <div>
-          <h4 style="margin: 0 0 4px 0; color: #0f172a;">${item.titulo}</h4>
-          <p style="margin: 0; color: #475569; font-size: 14px; white-space: pre-line;">${item.detalle}</p>
-        </div>
-        ${botonEliminar}
-      `;
-
-      contenedor.appendChild(card);
-    });
-  } catch (err) {
-    console.error('Error al cargar fechas:', err);
-    contenedor.innerHTML = '<p style="color: #ef4444;">Error al cargar las fechas. Verificá que la tabla exista en Supabase.</p>';
-  }
-}
-
-// Guardar fecha importante
-async function guardarFechaImportante(e) {
-  e.preventDefault();
-
-  if (!esDirector) {
-    alert("No tenés permisos para publicar recordatorios.");
-    return;
-  }
-
-  const titulo = document.getElementById('fechaTitulo').value.trim();
-  const detalle = document.getElementById('fechaDetalle').value.trim();
-
-  const { error } = await supabaseClient
-    .from('fechas_importantes')
-    .insert([{ titulo, detalle }]);
-
-  if (error) {
-    alert("Error al guardar: " + error.message);
-  } else {
-    document.getElementById('fechaTitulo').value = '';
-    document.getElementById('fechaDetalle').value = '';
-    cargarFechasImportantes();
-  }
-}
-
-// Eliminar fecha importante
-async function eliminarFechaImportante(id) {
-  if (!esDirector) return;
-
-  if (confirm("¿Seguro que querés eliminar este recordatorio?")) {
-    const { error } = await supabaseClient
-      .from('fechas_importantes')
-      .delete()
-      .eq('id', id);
-
-    if (error) {
-      alert("Error al eliminar: " + error.message);
-    } else {
-      cargarFechasImportantes();
-    }
-  }
-}
-
-  
   // 5. Verificación de sesión al cargar
   window.addEventListener('load', async () => {
     const { data: { session } } = await supabaseClient.auth.getSession();
@@ -1560,45 +1374,32 @@ async function eliminarFechaImportante(id) {
   });
 
   // 6. Instalación PWA
- let deferredPrompt;
+  let deferredPrompt;
 
-// 1. Escuchar el evento de instalación de la PWA
-window.addEventListener('beforeinstallprompt', (e) => {
-  e.preventDefault();
-  deferredPrompt = e;
-  
-  // Mostrar el banner solo si el elemento existe en el DOM
-  const pwaBanner = document.getElementById('pwaBanner');
-  if (pwaBanner) {
-    pwaBanner.style.display = 'flex';
-  }
-});
+  // El navegador detecta que es instalable y guarda el evento
+  window.addEventListener('beforeinstallprompt', (e) => {
+    e.preventDefault();
+    deferredPrompt = e;
+    // Muestra tu banner o botón personalizado si estaba oculto
+    const pwaBanner = document.getElementById('pwaBanner');
+    if (pwaBanner) pwaBanner.style.display = 'flex';
+  });
 
-// 2. Asignar el evento al botón de manera segura mediante una función global o evento condicional
-function dispararInstalacionPWA() {
-  if (deferredPrompt) {
-    deferredPrompt.prompt();
-    deferredPrompt.userChoice.then((choiceResult) => {
-      if (choiceResult.outcome === 'accepted') {
-        console.log('El usuario aceptó la instalación');
-      }
-      deferredPrompt = null;
-      
-      const pwaBanner = document.getElementById('pwaBanner');
-      if (pwaBanner) pwaBanner.style.display = 'none';
-    });
-  } else {
-    alert('Para instalar en iOS/iPhone: tocá el botón Compartir y seleccioná "Agregar al inicio". En Android/Chrome: desplegá los 3 puntos y elegí "Agregar a la pantalla principal".');
-  }
-}
-
-// 3. Vincular el botón solo cuando el DOM esté completamente cargado
-document.addEventListener('DOMContentLoaded', () => {
-  const btnInstalar = document.getElementById('installPwaBtn');
-  if (btnInstalar) {
-    btnInstalar.addEventListener('click', dispararInstalacionPWA);
-  }
-});
+  // Al hacer clic en tu botón, se dispara la ventana del sistema
+  document.getElementById('installPwaBtn').addEventListener('click', () => {
+    if (deferredPrompt) {
+      deferredPrompt.prompt();
+      deferredPrompt.userChoice.then((choiceResult) => {
+        if (choiceResult.outcome === 'accepted') {
+          console.log('El usuario aceptó la instalación');
+        }
+        deferredPrompt = null;
+        document.getElementById('pwaBanner').style.display = 'none';
+      });
+    } else {
+      alert('Para instalar en iPhone: tocá el botón Compartir y seleccioná "Agregar a inicio". En Android, usá el menú de 3 puntos -> "Agregar a la pantalla principal".');
+    }
+  });
 </script>
 
 </body>
