@@ -387,28 +387,28 @@
   </section>
 
 <!-- Pestaña 5: Fechas Importantes -->
-<div id="tab5" class="tab-content">
+<div id="tab5" class="tab-content" style="display: none;">
   <h3>📅 Fechas Importantes y Recordatorios</h3>
 
-  <!-- Panel para agregar (Oculto por defecto, se activa solo para acsup@ep7.com) -->
-  <div id="adminFechasForm" style="display: none; background: #f8fafc; padding: 15px; border-radius: 8px; margin-bottom: 20px; border: 1px solid #e2e8f0;">
+  <!-- Panel de administración (Visible solo para acsup@ep7.com) -->
+  <div id="adminFechasForm" style="display: none; background-color: #f8fafc; padding: 15px; border-radius: 8px; margin-bottom: 20px; border: 1px solid #e2e8f0;">
     <h4 style="margin-top: 0; color: #1e293b;">Agregar Nuevo Recordatorio</h4>
-    <form onsubmit="guardarFechaImportante(event)">
+    <form id="formNuevaFecha" onsubmit="guardarFechaImportante(event)">
       <div style="margin-bottom: 10px;">
-        <label style="display: block; font-size: 12px; font-weight: 600;">Fecha / Título</label>
-        <input type="text" id="fechaTitulo" placeholder="Ej: 25 de Mayo - Acto Escolar" required style="width: 100%; padding: 8px; border-radius: 4px; border: 1px solid #ccc;">
+        <label for="fechaTitulo" style="display: block; font-size: 12px; font-weight: 600; margin-bottom: 4px;">Fecha / Título</label>
+        <input type="text" id="fechaTitulo" placeholder="Ej: 25 de Mayo - Acto Escolar" required style="width: 100%; padding: 8px; border-radius: 4px; border: 1px solid #ccc; box-sizing: border-box;">
       </div>
       <div style="margin-bottom: 10px;">
-        <label style="display: block; font-size: 12px; font-weight: 600;">Nota / Detalle</label>
-        <textarea id="fechaDetalle" placeholder="Ej: Traer escarapelas. Turno mañana organiza el discurso." rows="3" required style="width: 100%; padding: 8px; border-radius: 4px; border: 1px solid #ccc;"></textarea>
+        <label for="fechaDetalle" style="display: block; font-size: 12px; font-weight: 600; margin-bottom: 4px;">Nota / Detalle</label>
+        <textarea id="fechaDetalle" placeholder="Ej: Traer escarapelas. Turno mañana organiza el discurso." rows="3" required style="width: 100%; padding: 8px; border-radius: 4px; border: 1px solid #ccc; box-sizing: border-box;"></textarea>
       </div>
-      <button type="submit" style="background: #2563eb; color: white; border: none; padding: 8px 16px; border-radius: 4px; font-weight: 600; cursor: pointer;">
+      <button type="submit" style="background-color: #2563eb; color: #ffffff; border: none; padding: 8px 16px; border-radius: 4px; font-weight: 600; cursor: pointer;">
         Publicar Recordatorio
       </button>
     </form>
   </div>
 
-  <!-- Contenedor donde se dibuja la lista -->
+  <!-- Contenedor dinámico de notas/recordatorios -->
   <div id="listaFechasImportantes">
     <p style="color: #64748b;">Cargando recordatorios...</p>
   </div>
@@ -1151,13 +1151,54 @@
   overlay.addEventListener('click', closeMenu);
 
   function switchTab(tabId) {
-    document.querySelectorAll('.tab-content').forEach(tab => tab.classList.remove('active'));
-    document.querySelectorAll('.nav-item').forEach(item => item.classList.remove('active'));
-    
-    document.getElementById(tabId).classList.add('active');
-    closeMenu();
+  // Ocultar todas las pestañas
+  const tabs = document.querySelectorAll('.tab-content');
+  tabs.forEach(tab => {
+    tab.style.display = 'none';
+    tab.classList.remove('active');
+  });
+
+  // Remover clase active del menú si existen
+  const navItems = document.querySelectorAll('.nav-link, .menu-item');
+  navItems.forEach(item => item.classList.remove('active'));
+
+  // Buscar la pestaña requerida (soporta 'tab5' o 'tab-5')
+  const targetTab = document.getElementById(tabId) || document.getElementById(tabId.replace('-', ''));
+  
+  if (!targetTab) {
+    console.error(`Error: La pestaña con id "${tabId}" no existe en el DOM.`);
+    return;
   }
 
+  // Mostrar la pestaña
+  targetTab.style.display = 'block';
+  targetTab.classList.add('active');
+
+  // Si se entra a la pestaña 5, cargar datos y verificar permisos
+  if (tabId === 'tab5' || tabId === 'tab-5') {
+    verificarPermisosAdmin();
+    renderizarFechas();
+  }
+}
+
+    // 3. Buscar el elemento objetivo
+    const targetTab = document.getElementById(tabId);
+    
+    // VALIDACIÓN CLAVE: Evita que la app se rompa si el ID no se encuentra
+    if (!targetTab) {
+        console.error(`La pestaña con ID "${tabId}" no existe en el HTML.`);
+        return;
+    }
+
+    // 4. Mostrar la pestaña seleccionada
+    targetTab.classList.remove('d-none');
+    targetTab.classList.add('active');
+
+    // 5. Opcional: Activar el botón correspondiente si pasa el event
+    if (event && event.currentTarget) {
+        event.currentTarget.classList.add('active');
+    }
+}
   function filtrarDocenteRecreo() {
     const input = document.getElementById('buscarDocente');
     const filter = input.value.toLowerCase().trim();
@@ -1519,32 +1560,45 @@ async function eliminarFechaImportante(id) {
   });
 
   // 6. Instalación PWA
-  let deferredPrompt;
+ let deferredPrompt;
 
-  // El navegador detecta que es instalable y guarda el evento
-  window.addEventListener('beforeinstallprompt', (e) => {
-    e.preventDefault();
-    deferredPrompt = e;
-    // Muestra tu banner o botón personalizado si estaba oculto
-    const pwaBanner = document.getElementById('pwaBanner');
-    if (pwaBanner) pwaBanner.style.display = 'flex';
-  });
+// 1. Escuchar el evento de instalación de la PWA
+window.addEventListener('beforeinstallprompt', (e) => {
+  e.preventDefault();
+  deferredPrompt = e;
+  
+  // Mostrar el banner solo si el elemento existe en el DOM
+  const pwaBanner = document.getElementById('pwaBanner');
+  if (pwaBanner) {
+    pwaBanner.style.display = 'flex';
+  }
+});
 
-  // Al hacer clic en tu botón, se dispara la ventana del sistema
-  document.getElementById('installPwaBtn').addEventListener('click', () => {
-    if (deferredPrompt) {
-      deferredPrompt.prompt();
-      deferredPrompt.userChoice.then((choiceResult) => {
-        if (choiceResult.outcome === 'accepted') {
-          console.log('El usuario aceptó la instalación');
-        }
-        deferredPrompt = null;
-        document.getElementById('pwaBanner').style.display = 'none';
-      });
-    } else {
-      alert('Para instalar en iPhone: tocá el botón Compartir y seleccioná "Agregar a inicio". En Android, usá el menú de 3 puntos -> "Agregar a la pantalla principal".');
-    }
-  });
+// 2. Asignar el evento al botón de manera segura mediante una función global o evento condicional
+function dispararInstalacionPWA() {
+  if (deferredPrompt) {
+    deferredPrompt.prompt();
+    deferredPrompt.userChoice.then((choiceResult) => {
+      if (choiceResult.outcome === 'accepted') {
+        console.log('El usuario aceptó la instalación');
+      }
+      deferredPrompt = null;
+      
+      const pwaBanner = document.getElementById('pwaBanner');
+      if (pwaBanner) pwaBanner.style.display = 'none';
+    });
+  } else {
+    alert('Para instalar en iOS/iPhone: tocá el botón Compartir y seleccioná "Agregar al inicio". En Android/Chrome: desplegá los 3 puntos y elegí "Agregar a la pantalla principal".');
+  }
+}
+
+// 3. Vincular el botón solo cuando el DOM esté completamente cargado
+document.addEventListener('DOMContentLoaded', () => {
+  const btnInstalar = document.getElementById('installPwaBtn');
+  if (btnInstalar) {
+    btnInstalar.addEventListener('click', dispararInstalacionPWA);
+  }
+});
 </script>
 
 </body>
