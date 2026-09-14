@@ -103,7 +103,7 @@
 </nav>
 
 <!-- Pantalla de Login / Registro -->
-<section class="login-container" id="loginSection" style="display: none;">
+<section class="login-container" id="loginSection" style="display: flex;">
   <div class="login-card">
     <h2 id="authTitle" style="text-align: center; color: var(--primary, #1e3a8a); margin-bottom: 16px;">Acceso Docente</h2>
     
@@ -141,7 +141,7 @@
   </div>
 </section>
 <!-- Contenido Principal Protegido -->
-<main id="mainContent" class="authenticated" style="display: block;">
+<main id="mainContent" style="display: none;">
   
   <div class="pwa-banner" id="pwaBanner">
     <span>📲 Instalar app institucional en el teléfono</span>
@@ -1126,29 +1126,62 @@
 </main>
 
 <script>
-  // CONFIGURACIÓN DE SUPABASE
-  // Reemplazá estos dos valores con los de tu proyecto (Project Settings -> API)
-  const SUPABASE_URL = 'https://zywsxbgultetvyinbvvu.supabase.co';
-  const SUPABASE_ANON_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6Inp5d3N4Ymd1bHRldHZ5aW5idnZ1Iiwicm9sZSI6ImFub24iLCJpYXQiOjE3ODkwMTU1ODcsImV4cCI6MjEwNDU5MTU4N30.jTYxZbzxDSZBe36N5uZ77_X5WgJ-9iiVO0wfg1HKX_E';
+ // 1. CONFIGURACIÓN DE SUPABASE (Dejá tus datos)
+const SUPABASE_URL = 'https://zywsxbgultetvyinbvvu.supabase.co';
+const SUPABASE_ANON_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6Inp5d3N4Ymd1bHRldHZ5aW5idnZ1Iiwicm9sZSI6ImFub24iLCJpYXQiOjE3ODkwMTU1ODcsImV4cCI6MjEwNDU5MTU4N30.jTYxZbzxDSZBe36N5uZ77_X5WgJ-9iiVO0wfg1HKX_E';
 
-  const supabaseClient = supabase.createClient(SUPABASE_URL, SUPABASE_ANON_KEY);
+const supabaseClient = supabase.createClient(SUPABASE_URL, SUPABASE_ANON_KEY);
 
-  // Control del Drawer (Menú Desplegable)
-  const drawer = document.getElementById('drawer');
-  const overlay = document.getElementById('overlay');
-  
-  document.getElementById('openMenuBtn').addEventListener('click', () => {
-    drawer.classList.add('open');
-    overlay.classList.add('active');
-  });
+// 2. CONTROL DEL DRAWER (Dejá este bloque exacto como está)
+const drawer = document.getElementById('drawer');
+const overlay = document.getElementById('overlay');
 
-  const closeMenu = () => {
-    drawer.classList.remove('open');
-    overlay.classList.remove('active');
-  };
+document.getElementById('openMenuBtn').addEventListener('click', () => {
+  drawer.classList.add('open');
+  overlay.classList.add('active');
+});
 
-  document.getElementById('closeMenuBtn').addEventListener('click', closeMenu);
-  overlay.addEventListener('click', closeMenu);
+const closeMenu = () => {
+  drawer.classList.remove('open');
+  overlay.classList.remove('active');
+};
+
+document.getElementById('closeMenuBtn').addEventListener('click', closeMenu);
+overlay.addEventListener('click', closeMenu);
+
+// 3. LÓGICA DE CONTROL DE SESIÓN (Esto es lo que tenés que sumar abajo)
+function actualizarInterfaz(session) {
+  const mainContent = document.getElementById('mainContent');
+  const loginSection = document.getElementById('loginSection');
+  const userStatus = document.getElementById('userStatus');
+
+  if (session) {
+    if (loginSection) loginSection.style.display = 'none';
+    if (mainContent) {
+      mainContent.style.display = 'block';
+      mainContent.classList.add('authenticated');
+    }
+    if (userStatus) userStatus.textContent = session.user.email;
+  } else {
+    if (loginSection) loginSection.style.display = 'flex';
+    if (mainContent) {
+      mainContent.style.display = 'none';
+      mainContent.classList.remove('authenticated');
+    }
+    if (userStatus) userStatus.textContent = 'Invitado';
+  }
+}
+
+// Verificar la sesión al cargar la página
+document.addEventListener('DOMContentLoaded', async () => {
+  const { data: { session } } = await supabaseClient.auth.getSession();
+  actualizarInterfaz(session);
+});
+
+// Detectar cuando el usuario inicia o cierra sesión
+supabaseClient.auth.onAuthStateChange((_event, session) => {
+  actualizarInterfaz(session);
+});
 
   function switchTab(tabId) {
   // Ocultar todas las pestañas
