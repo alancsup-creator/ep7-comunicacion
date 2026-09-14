@@ -47,37 +47,73 @@
 
   /* Vista de Autenticación */
   .login-container { display: flex; justify-content: center; align-items: center; min-height: 80vh; padding: 20px; }
-  .login-card { background: var(--card); border: 1px solid var(--border); border-radius: 12px; padding: 24px; width: 100%; max-width: 360px; box-shadow: 0 4px 6px -1px rgba(0,0,0,0.1); }
-  .login-card h2 { margin-bottom: 16px; font-size: 20px; text-align: center; color: var(--primary); }
-  .form-group { margin-bottom: 14px; }
-  .form-group label { display: block; font-size: 13px; font-weight: 600; margin-bottom: 4px; }
-  .form-group input { width: 100%; padding: 10px; border: 1px solid var(--border); border-radius: 6px; font-size: 14px; }
-  .btn-submit { width: 100%; background: var(--primary); color: white; border: none; padding: 12px; border-radius: 6px; font-weight: 600; cursor: pointer; margin-top: 8px; }
-  .btn-submit:disabled { opacity: 0.6; cursor: not-allowed; }
-  .error-msg { color: var(--danger); font-size: 13px; margin-top: 8px; text-align: center; display: none; }
+  .login-card { background: var(--card); border: 1px solid var(--border); border-radius: 12px;<!DOCTYPE html>
+<html lang="es">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<meta name="theme-color" content="#1e3a8a">
+<title>EP N° 7 Comunicación Institucional</title>
+<link rel="manifest" href="manifest.json">
+<script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+<style>
+:root {
+  --primary: #1e3a8a;
+  --primary-dark: #1e293b;
+  --accent: #0284c7;
+  --bg: #f8fafc;
+  --card: #ffffff;
+  --text: #334155;
+  --border: #e2e8f0;
+  --danger: #ef4444;
+}
+* { box-sizing: border-box; margin: 0; padding: 0; font-family: system-ui, -apple-system, sans-serif; }
+body { background: var(--bg); color: var(--text); display: flex; flex-direction: column; min-height: 100vh; }
 
-  /* Contenido Principal Protegido */
-  main { padding: 20px; max-width: 1000px; margin: 0 auto; width: 100%; flex: 1; display: none; }
-  main.authenticated { display: block; }
-  
-  .tab-content { display: none; background: var(--card); border: 1px solid var(--border); border-radius: 12px; padding: 20px; box-shadow: 0 1px 3px rgba(0,0,0,0.05); }
-  .tab-content.active { display: block; }
-  .tab-content h2 { color: var(--primary); margin-bottom: 14px; font-size: 18px; border-bottom: 2px solid var(--border); padding-bottom: 8px; }
+/* Encabezado */
+header { background: var(--primary); color: white; padding: 14px 20px; display: flex; align-items: center; justify-content: space-between; position: sticky; top: 0; z-index: 10; box-shadow: 0 2px 4px rgba(0,0,0,0.1); }
+header h1 { font-size: 18px; font-weight: 700; }
+.btn-menu { background: none; border: none; color: white; font-size: 24px; cursor: pointer; padding: 4px; }
 
-  /* Tablas de Datos */
-  table { width: 100%; border-collapse: collapse; margin-top: 10px; font-size: 14px; }
-  th, td { border: 1px solid var(--border); padding: 10px; text-align: left; }
-  th { background: #f1f5f9; color: var(--primary-dark); font-weight: 600; }
-  
-  /* Banner PWA */
-  .pwa-banner { background: #e0f2fe; border: 1px solid #bae6fd; padding: 12px; border-radius: 8px; margin-bottom: 16px; display: none; justify-content: space-between; align-items: center; }
-  .btn-install { background: var(--accent); color: white; border: none; padding: 6px 12px; border-radius: 6px; font-weight: 600; cursor: pointer; }
+/* Panel Lateral */
+.overlay { position: fixed; inset: 0; background: rgba(0,0,0,0.5); z-index: 20; display: none; }
+.overlay.active { display: block; }
+.drawer { position: fixed; top: 0; left: -280px; width: 280px; height: 100%; background: var(--primary-dark); color: white; z-index: 30; transition: left 0.3s ease; display: flex; flex-direction: column; }
+.drawer.open { left: 0; }
+.drawer-header { padding: 20px; border-bottom: 1px solid rgba(255,255,255,0.1); display: flex; justify-content: space-between; align-items: center; }
+.drawer-header h2 { font-size: 16px; color: #93c5fd; }
+.nav-list { list-style: none; padding: 10px 0; overflow-y: auto; flex: 1; }
+.nav-item { padding: 14px 20px; cursor: pointer; display: flex; align-items: center; gap: 12px; font-size: 15px; transition: background 0.2s; }
+.nav-item:hover, .nav-item.active { background: rgba(255,255,255,0.1); border-left: 4px solid var(--accent); }
+
+/* Login */
+.login-container { display: flex; justify-content: center; align-items: center; min-height: 80vh; padding: 20px; }
+.login-card { background: var(--card); border: 1px solid var(--border); border-radius: 12px; padding: 24px; width: 100%; max-width: 360px; box-shadow: 0 4px 6px -1px rgba(0,0,0,0.1); }
+.login-card h2 { margin-bottom: 16px; font-size: 20px; text-align: center; color: var(--primary); }
+.form-group { margin-bottom: 14px; }
+.form-group label { display: block; font-size: 13px; font-weight: 600; margin-bottom: 4px; }
+.form-group input { width: 100%; padding: 10px; border: 1px solid var(--border); border-radius: 6px; font-size: 14px; }
+.btn-submit { width: 100%; background: var(--primary); color: white; border: none; padding: 12px; border-radius: 6px; font-weight: 600; cursor: pointer; margin-top: 8px; }
+.btn-submit:disabled { opacity: 0.6; cursor: not-allowed; }
+.error-msg { color: var(--danger); font-size: 13px; margin-top: 8px; text-align: center; display: none; }
+
+/* Contenido Principal Protegido */
+main { padding: 20px; max-width: 1000px; margin: 0 auto; width: 100%; flex: 1; display: none; }
+main.authenticated { display: block; }
+.tab-content { display: none; background: var(--card); border: 1px solid var(--border); border-radius: 12px; padding: 20px; box-shadow: 0 1px 3px rgba(0,0,0,0.05); }
+.tab-content.active { display: block; }
+.tab-content h2 { color: var(--primary); margin-bottom: 14px; font-size: 18px; border-bottom: 2px solid var(--border); padding-bottom: 8px; }
+
+/* Tablas */
+table { width: 100%; border-collapse: collapse; margin-top: 10px; font-size: 14px; }
+th, td { border: 1px solid var(--border); padding: 10px; text-align: left; }
+th { background: #f1f5f9; color: var(--primary-dark); font-weight: 600; }
 </style>
 </head>
 <body>
 
 <header>
-  <button class="btn-menu" id="openMenuBtn">☰</button>
+  <button class="btn-menu" id="openMenuBtn">=</button>
   <h1>EP N° 7 - Panel Institucional</h1>
   <span id="userStatus" style="font-size: 12px; opacity: 0.8;">Invitado</span>
 </header>
@@ -88,17 +124,17 @@
 <nav class="drawer" id="drawer">
   <div class="drawer-header">
     <h2>Menú Institucional</h2>
-    <button class="btn-menu" id="closeMenuBtn">✕</button>
+    <button class="btn-menu" id="closeMenuBtn">X</button>
   </div>
   <ul class="nav-list">
-    <li class="nav-item active" onclick="switchTab('tab1')">📌 Docente de Turno</li>
-    <li class="nav-item" onclick="switchTab('tab2')">🛡️ Cronograma de Cuidados</li>
-    <li class="nav-item" onclick="switchTab('tab3')">⏰ Horarios</li>
-    <li class="nav-item" onclick="switchTab('tab4')">📊 Calificaciones</li>
-    <li class="nav-item" onclick="switchTab('tab5')">📅 Fechas Importantes</li>
-    <li class="nav-item" onclick="switchTab('tab6')">👥 Alumnos y Teléfonos</li>
-    <li class="nav-item" id="adminTab" style="display:none; color: #fca5a5;" onclick="switchTab('adminPanel')">⚙️ Gestión de Accesos</li>
-    <li class="nav-item" onclick="logout()" style="margin-top: auto; border-top: 1px solid rgba(255,255,255,0.1);">🚪 Cerrar Sesión</li>
+    <li class="nav-item active" onclick="switchTab('tab1')">Docente de Turno</li>
+    <li class="nav-item" onclick="switchTab('tab2')">Cronograma de Cuidados</li>
+    <li class="nav-item" onclick="switchTab('tab3')">Horarios</li>
+    <li class="nav-item" onclick="switchTab('tab4')">Calificaciones</li>
+    <li class="nav-item" onclick="switchTab('tab5')">Fechas Importantes</li>
+    <li class="nav-item" onclick="switchTab('tab6')">Alumnos y Teléfonos</li>
+    <li class="nav-item" id="adminTab" style="display:none; color: #fca5a5;" onclick="switchTab('adminPanel')">Gestión de Accesos</li>
+    <li class="nav-item" onclick="logout()" style="margin-top: auto; border-top: 1px solid rgba(255,255,255,0.1);">Cerrar Sesión</li>
   </ul>
 </nav>
 
