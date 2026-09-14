@@ -91,10 +91,10 @@
     <button class="btn-menu" id="closeMenuBtn">✕</button>
   </div>
   <ul class="nav-list">
-    <li class="nav-item active" onclick="switchTab(tab1')">📌 Docente de Turno</li>
+    <li class="nav-item active" onclick="switchTab('tab1')">📌 Docente de Turno</li>
     <li class="nav-item" onclick="switchTab('tab2')">🛡️ Cronograma de Cuidados</li>
     <li class="nav-item" onclick="switchTab('tab3')">⏰ Horarios</li>
-    <li class="nav-item" onclick="switchTab(tab4')">📊 Calificaciones</li>
+    <li class="nav-item" onclick="switchTab('tab4')">📊 Calificaciones</li>
     <li class="nav-item" onclick="switchTab('tab5')">📅 Fechas Importantes</li>
     <li class="nav-item" onclick="switchTab('tab6')">👥 Alumnos y Teléfonos</li>
     <li class="nav-item" id="adminTab" style="display:none; color: #fca5a5;" onclick="switchTab('adminPanel')">⚙️ Gestión de Accesos</li>
@@ -149,7 +149,7 @@
   </div>
 
   <!-- Pestaña 1: Docente de Turno -->
-  <section id="docenteTurno" class="tab-content active">
+  <section id="tab1" class="tab-content active">
     <h2>📌 Docente de Turno 2026</h2>
     <table>
       <thead>
@@ -187,7 +187,7 @@
   </section>
   
   <!-- Pestaña 2: Cronograma de Cuidados -->
-  <section id="cronograma" class="tab-content">
+  <section id="tab2" class="tab-content">
     <h2>🛡️ Cronograma de Cuidados de Recreos 2026</h2>
 
     <!-- Buscador de Docente Mejorado -->
@@ -375,18 +375,19 @@
   </section>
   
   <!-- Pestaña 3: Horarios -->
-  <section id="horarios" class="tab-content">
+  <section id="tab3" class="tab-content">
     <h2>⏰ Horarios Institucionales</h2>
     <p>Consulta de horarios por sección y especialidades.</p>
   </section>
 
   <!-- Pestaña 4: Calificaciones -->
-  <section id="calificaciones" class="tab-content">
+  <section id="tab4" class="tab-content">
     <h2>📊 Registro de Calificaciones</h2>
     <p>Planillas de evaluación continua y entregas de RITE.</p>
   </section>
 
 <!-- Pestaña 5: Fechas Importantes -->
+<section id="tab5" class="tab-content">
   <h3>📅 Fechas Importantes y Recordatorios</h3>
 
   <!-- Panel de administración (Visible solo para acsup@ep7.com) -->
@@ -415,6 +416,7 @@
 
 
   <!-- Pestaña 6: Listado de Alumnos con Teléfonos -->
+  <section id="tab6" class="tab-content">
   <h2>👥 Listado de Alumnos y Contactos de Emergencia</h2>
 
   <!-- Contenedor de Filtros -->
@@ -1421,7 +1423,7 @@ function setAuthenticatedUser(email) {
 
   // Se activa la verificación de permisos y carga inicial:
   verificarPermisosDirector(email);
-  switchTab('docenteTurno');
+  switchTab('tab1');
 }
 
 
