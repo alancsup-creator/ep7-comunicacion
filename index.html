@@ -72,6 +72,96 @@
   /* Banner PWA */
   .pwa-banner { background: #e0f2fe; border: 1px solid #bae6fd; padding: 12px; border-radius: 8px; margin-bottom: 16px; display: none; justify-content: space-between; align-items: center; }
   .btn-install { background: var(--accent); color: white; border: none; padding: 6px 12px; border-radius: 6px; font-weight: 600; cursor: pointer; }
+
+  .cards-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(300px, 1fr));
+  gap: 1.5rem;
+  margin-top: 1.5rem;
+}
+
+.card-status {
+  background: #ffffff;
+  border-radius: 12px;
+  padding: 1.5rem;
+  box-shadow: 0 4px 12px rgba(0,0,0,0.08);
+  border: 1px solid #e5e7eb;
+  display: flex;
+  flex-direction: column;
+  justify-content: space-between;
+}
+
+.card-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-bottom: 0.5rem;
+}
+
+.card-header h3 {
+  margin: 0;
+  font-size: 1.1rem;
+  color: #1f2937;
+}
+
+.card-desc {
+  color: #6b7280;
+  font-size: 0.9rem;
+  margin-bottom: 1.2rem;
+}
+
+/* Badges de Estado */
+.status-badge {
+  padding: 0.25rem 0.75rem;
+  border-radius: 9999px;
+  font-size: 0.8rem;
+  font-weight: 600;
+  text-transform: capitalize;
+}
+
+.status-badge.incompleta { background-color: #fee2e2; color: #991b1b; }
+.status-badge.proceso { background-color: #fef3c7; color: #92400e; }
+.status-badge.completa { background-color: #d1fae5; color: #065f46; }
+
+/* Botón y Select */
+.card-actions {
+  display: flex;
+  flex-direction: column;
+  gap: 1rem;
+}
+
+.btn-drive {
+  display: inline-block;
+  text-align: center;
+  background-color: #2563eb;
+  color: white;
+  padding: 0.6rem 1rem;
+  border-radius: 8px;
+  text-decoration: none;
+  font-weight: 500;
+  transition: background 0.2s;
+}
+
+.btn-drive:hover {
+  background-color: #1d4ed8;
+}
+
+.select-group {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  font-size: 0.9rem;
+  color: #374151;
+}
+
+.select-group select {
+  padding: 0.4rem 0.8rem;
+  border-radius: 6px;
+  border: 1px solid #d1d5db;
+  background-color: #f9fafb;
+  font-size: 0.9rem;
+  cursor: pointer;
+}
 </style>
 </head>
 <body>
@@ -382,11 +472,60 @@
   </section>
 
   <!-- Pestaña 4: Calificaciones -->
-  <section id="calificaciones" class="tab-content">
-    <h2>📊 Registro de Calificaciones</h2>
-    <p>Planillas de evaluación continua y entregas de RITE.</p>
-  </section>
+  <section id="calificaciones" class="tab-content" style="display: none;">
+  <h2>📊 Calificaciones e Informes</h2>
 
+  <div class="cards-grid">
+    <!-- Tarjeta 1: Planilla de Calificaciones -->
+    <div class="card-status">
+      <div class="card-header">
+        <h3>📋 Planilla de Calificaciones</h3>
+        <span id="badge-planilla" class="status-badge incompleta">Incompleta</span>
+      </div>
+      <p class="card-desc">Carga de notas y registros generales del ciclo lectivo.</p>
+      
+      <div class="card-actions">
+        <a href="https://docs.google.com/spreadsheets/d/1iRpx-fTeh37u9WRmOBqrlJ6WJDlqPc2PolM_FHXUpKU/edit?usp=drive_link" target="_blank" class="btn-drive">
+          📁 Abrir Planilla
+        </a>
+        
+        <div class="select-group">
+          <label for="select-planilla">Estado:</label>
+          <select id="select-planilla" onchange="actualizarEstado('planilla', this.value)">
+            <option value="incompleta" selected>Incompleta</option>
+            <option value="proceso">En proceso</option>
+            <option value="completa">Completa</option>
+          </select>
+        </div>
+      </div>
+    </div>
+
+    <!-- Tarjeta 2: Informes Valorativos -->
+    <div class="card-status">
+      <div class="card-header">
+        <h3>📂 Informes Valorativos</h3>
+        <span id="badge-informes" class="status-badge incompleta">Incompleta</span>
+      </div>
+      <p class="card-desc">Carpeta de Drive con la documentación pedagógica individual.</p>
+      
+      <div class="card-actions">
+        <a href="https://drive.google.com/drive/folders/1UWb-FNf7crwEk7qgki5B0FrPqWWt4KUO?usp=drive_link" target="_blank" class="btn-drive">
+          📁 Abrir Carpeta
+        </a>
+        
+        <div class="select-group">
+          <label for="select-informes">Estado:</label>
+          <select id="select-informes" onchange="actualizarEstado('informes', this.value)">
+            <option value="incompleta" selected>Incompleta</option>
+            <option value="proceso">En proceso</option>
+            <option value="completa">Completa</option>
+          </select>
+        </div>
+      </div>
+    </div>
+  </div>
+</section>
+  
 <!-- Pestaña 5: Fechas Importantes -->
 <div id="fechas" class="tab-content" style="display: none;">
   <h3>📅 Fechas Importantes y Recordatorios</h3>
@@ -1631,6 +1770,22 @@ document.addEventListener('DOMContentLoaded', () => {
     btnInstalar.addEventListener('click', dispararInstalacionPWA);
   }
 });
+
+  function actualizarEstado(tipo, valor) {
+  const badge = document.getElementById(`badge-${tipo}`);
+  if (!badge) return;
+
+  // Limpiar clases anteriores
+  badge.classList.remove('incompleta', 'proceso', 'completa');
+  
+  // Agregar la nueva clase y actualizar el texto
+  badge.classList.add(valor);
+  
+  if (valor === 'incompleta') badge.textContent = 'Incompleta';
+  if (valor === 'proceso') badge.textContent = 'En proceso';
+  if (valor === 'completa') badge.textContent = 'Completa';
+}
+  
 </script>
 
 </body>
