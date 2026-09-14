@@ -1175,7 +1175,11 @@
   targetTab.classList.add('active');
 
   // Si se entra a la pestaña 5, cargar datos y verificar permisos
-  if (tabId === 'tab5' || tabId === 'tab-5') {
+  // Lógica delegada a switchTab
+
+
+  // Cargar datos específicos si corresponde
+  if (tabId === 'fechas' || tabId === 'tab5' || tabId === 'tab-5') {
     verificarPermisosDirector(document.getElementById('userStatus').innerText);
   }
 }
@@ -1417,8 +1421,9 @@ function setAuthenticatedUser(email) {
     document.getElementById('adminTab').style.display = 'flex';
   }
 
-  // AGREGÁ ESTA LÍNEA ACÁ PARA ACTIVAR LA PESTAÑA 5:
+  // Se activa la verificación de permisos y carga inicial:
   verificarPermisosDirector(email);
+  switchTab('docenteTurno');
 }
 
 
@@ -1584,4 +1589,5 @@ document.addEventListener('DOMContentLoaded', () => {
 
 </body>
 </html>
+
 
