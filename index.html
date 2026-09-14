@@ -97,11 +97,12 @@
     <li class="nav-item" onclick="switchTab('calificaciones')">📊 Calificaciones</li>
     <li class="nav-item" onclick="switchTab('fechas')">📅 Fechas Importantes</li>
     <li class="nav-item" onclick="switchTab('alumnos')">👥 Alumnos y Teléfonos</li>
+    <li class="nav-item" onclick="switchTab('salidasEducativas')">🚌 Salidas Educativas</li>
     <li class="nav-item" id="adminTab" style="display:none; color: #fca5a5;" onclick="switchTab('adminPanel')">⚙️ Gestión de Accesos</li>
     <li class="nav-item" onclick="logout()" style="margin-top: auto; border-top: 1px solid rgba(255,255,255,0.1);">🚪 Cerrar Sesión</li>
   </ul>
 </nav>
-
+  
 <!-- Pantalla de Login / Registro -->
 <section class="login-container" id="loginSection" style="display: flex;">
   <div class="login-card">
@@ -1078,6 +1079,23 @@
     </table>
   </section>
 
+  <!-- Pestaña 7: Salidas Educativas -->
+  <section id="salidasEducativas" class="tab-content" style="display: none;">
+    <h2>🚌 Salidas Educativas</h2>
+    <div style="width: 100%; height: 80vh; margin-top: 1rem;">
+      <iframe 
+  src="https://docs.google.com/forms/d/e/1FAIpQLSdCiIJLpr39yjSkI2ZbBgEyhTG3ZS5dWTsgpOEIRrtokVd_pA/viewform?embedded=true" 
+  width="100%" 
+  height="100%" 
+  frameborder="0" 
+  marginheight="0" 
+  marginwidth="0"
+  style="border: none; border-radius: 8px;">
+  Cargando formulario…
+</iframe>
+    </div>
+  </section>
+  
   <!-- Pestaña de Administración -->
   <section id="adminPanel" class="tab-content">
     <h2>⚙️ Gestión de Accesos (Directivo)</h2>
