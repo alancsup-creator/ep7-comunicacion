@@ -1894,7 +1894,6 @@ async function ejecutarLogin() {
   loginBtn.disabled = true;
   if (errorMsg) errorMsg.style.display = 'none';
 
-  // 1. Iniciar sesión en Supabase Auth
   const { data: authData, error: authError } = await supabaseClient.auth.signInWithPassword({
     email: email,
     password: password,
@@ -1907,7 +1906,6 @@ async function ejecutarLogin() {
     return;
   }
 
-  // 2. Consultar el perfil utilizando el ID del usuario autenticado
   const userId = authData.user ? authData.user.id : null;
 
   if (!userId) {
@@ -1928,14 +1926,13 @@ async function ejecutarLogin() {
 
   if (profileError || !profiles || profiles.length === 0) {
     console.error("Error RLS o perfil no encontrado:", profileError);
-    mostrarMensajeError("No se pudieron verificar los permisos. Revisa la consola o contacta al admin.");
+    mostrarMensajeError("No se pudieron verificar los permisos del usuario.");
     await supabaseClient.auth.signOut();
     return;
   }
 
   const profile = profiles[0];
 
-  // 3. Evaluar el estado
   if (profile.estado === 'pendiente') {
     alert("Tu cuenta fue creada con éxito, pero requiere la aprobación de la Dirección para acceder.");
     await supabaseClient.auth.signOut();
@@ -1948,10 +1945,9 @@ async function ejecutarLogin() {
     return;
   }
 
-  // 4. Si está aprobado, ingresa a la app
   setAuthenticatedUser(authData.user.email);
 }
-  
+
 async function registrarUsuario() {
   const nombreInput = document.getElementById('authNombre');
   const nombre = nombreInput ? nombreInput.value.trim() : '';
@@ -1991,7 +1987,6 @@ async function registrarUsuario() {
   if (error) {
     mostrarMensajeError('Error al registrar: ' + error.message);
   } else if (data.user) {
-    // Al registrarse, se desloguea inmediatamente y avisa que debe ser aprobado
     await supabaseClient.auth.signOut();
     alert("Cuenta registrada con éxito. Estado: PENDIENTE DE APROBACIÓN por la Dirección.");
     toggleModoRegistro();
@@ -2033,7 +2028,7 @@ async function logout() {
 
   if (typeof closeMenu === 'function') closeMenu();
 }
-
+  
 let esDirector = false;
 
 function verificarPermisosDirector(userEmail) {
