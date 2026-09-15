@@ -1907,21 +1907,22 @@ async function ejecutarLogin() {
     return;
   }
 
-  // 2. Verificar estado en la tabla profiles
-  const { data: profile, error: profileError } = await supabaseClient
+  // 2. Verificar estado en la tabla profiles (sin utilizar .single() para evitar el error)
+  const { data: profiles, error: profileError } = await supabaseClient
     .from('profiles')
     .select('estado')
-    .eq('id', data.user.id)
-    .single();
+    .eq('id', data.user.id);
 
   loginBtn.innerText = "Ingresar";
   loginBtn.disabled = false;
 
-  if (profileError || !profile) {
-    mostrarMensajeError("Error al consultar los permisos del usuario.");
+  if (profileError || !profiles || profiles.length === 0) {
+    mostrarMensajeError("Error al consultar los permisos del usuario o perfil no encontrado.");
     await supabaseClient.auth.signOut();
     return;
   }
+
+  const profile = profiles[0];
 
   if (profile.estado === 'pendiente') {
     alert("Tu cuenta fue creada con éxito, pero requiere la aprobación de la Dirección para acceder.");
@@ -2055,6 +2056,31 @@ async function cargarFechasImportantes() {
       return;
     }
 
+    contenedor.innerHTML = '';
+    data.forEach((item) => {
+      const card = document.createElement('div');
+      card.style.cssText = 'background: white; border-left: 4px solid #2563eb; padding: 12px; margin-bottom: 10px; border-radius: 4px; box-shadow: 0 1px 3px rgba(0,0,0,0.1); display: flex; justify-content: space-between; align-items: flex-start;';
+
+      let botonEliminar = '';
+      if (esDirector) {
+        botonEliminar = `<button onclick="eliminarFechaImportante(${item.id})" style="background: transparent; color: #ef4444; border: none; font-weight: bold; cursor: pointer; padding: 0 4px;">❌</button>`;
+      }
+
+      card.innerHTML = `
+        <div>
+          <h4 style="margin: 0 0 4px 0; color: #0f172a;">${item.titulo}</h4>
+          <p style="margin: 0; color: #475569; font-size: 14px; white-space: pre-line;">${item.detalle}</p>
+        </div>
+        ${botonEliminar}
+      `;
+
+      contenedor.appendChild(card);
+    });
+  } catch (err) {
+    console.error('Error al cargar fechas:', err);
+    contenedor.innerHTML = '<p style="color: #ef4444;">Error al cargar las fechas. Verificá que la tabla exista en Supabase.</p>';
+  }
+}
     contenedor.innerHTML = '';
     data.forEach((item) => {
       const card = document.createElement('div');
