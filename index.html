@@ -2045,10 +2045,8 @@ function verificarPermisosDirector(userEmail) {
 }
 
 async function cargarFechasImportantes() {
-  const contenedor = document.getElementById('listaFechasImportantes');
+  const contenedor = document.getElementById('fechasContainer');
   if (!contenedor) return;
-
-  contenedor.innerHTML = '<p style="color: #64748b;">Cargando recordatorios...</p>';
 
   try {
     const { data, error } = await supabaseClient
@@ -2059,7 +2057,7 @@ async function cargarFechasImportantes() {
     if (error) throw error;
 
     if (!data || data.length === 0) {
-      contenedor.innerHTML = '<p style="color: #64748b;">No hay recordatorios registrados por el momento.</p>';
+      contenedor.innerHTML = '<p style="color: #64748b; font-size: 14px;">No hay fechas ni recordatorios publicados.</p>';
       return;
     }
 
@@ -2088,31 +2086,7 @@ async function cargarFechasImportantes() {
     contenedor.innerHTML = '<p style="color: #ef4444;">Error al cargar las fechas. Verificá que la tabla exista en Supabase.</p>';
   }
 }
-    contenedor.innerHTML = '';
-    data.forEach((item) => {
-      const card = document.createElement('div');
-      card.style.cssText = 'background: white; border-left: 4px solid #2563eb; padding: 12px; margin-bottom: 10px; border-radius: 4px; box-shadow: 0 1px 3px rgba(0,0,0,0.1); display: flex; justify-content: space-between; align-items: flex-start;';
 
-      let botonEliminar = '';
-      if (esDirector) {
-        botonEliminar = `<button onclick="eliminarFechaImportante(${item.id})" style="background: transparent; color: #ef4444; border: none; font-weight: bold; cursor: pointer; padding: 0 4px;">❌</button>`;
-      }
-
-      card.innerHTML = `
-        <div>
-          <h4 style="margin: 0 0 4px 0; color: #0f172a;">${item.titulo}</h4>
-          <p style="margin: 0; color: #475569; font-size: 14px; white-space: pre-line;">${item.detalle}</p>
-        </div>
-        ${botonEliminar}
-      `;
-
-      contenedor.appendChild(card);
-    });
-  } catch (err) {
-    console.error('Error al cargar fechas:', err);
-    contenedor.innerHTML = '<p style="color: #ef4444;">Error al cargar las fechas. Verificá que la tabla exista en Supabase.</p>';
-  }
-}
 // Guardar fecha importante
 async function guardarFechaImportante(e) {
   e.preventDefault();
