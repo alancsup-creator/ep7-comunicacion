@@ -1894,36 +1894,48 @@ async function ejecutarLogin() {
   loginBtn.disabled = true;
   if (errorMsg) errorMsg.style.display = 'none';
 
-  // 1. Iniciar sesión en Supabase
-  const { data, error } = await supabaseClient.auth.signInWithPassword({
+  // 1. Iniciar sesión en Supabase Auth
+  const { data: authData, error: authError } = await supabaseClient.auth.signInWithPassword({
     email: email,
     password: password,
   });
 
-  if (error) {
+  if (authError) {
     loginBtn.innerText = "Ingresar";
     loginBtn.disabled = false;
-    mostrarMensajeError("Acceso denegado: " + error.message);
+    mostrarMensajeError("Acceso denegado: " + authError.message);
     return;
   }
 
-  // 2. Verificar estado en la tabla profiles (sin utilizar .single() para evitar el error)
+  // 2. Consultar el perfil utilizando el ID del usuario autenticado
+  const userId = authData.user ? authData.user.id : null;
+
+  if (!userId) {
+    loginBtn.innerText = "Ingresar";
+    loginBtn.disabled = false;
+    mostrarMensajeError("Error al recuperar el ID de usuario.");
+    await supabaseClient.auth.signOut();
+    return;
+  }
+
   const { data: profiles, error: profileError } = await supabaseClient
     .from('profiles')
     .select('estado')
-    .eq('id', data.user.id);
+    .eq('id', userId);
 
   loginBtn.innerText = "Ingresar";
   loginBtn.disabled = false;
 
   if (profileError || !profiles || profiles.length === 0) {
-    mostrarMensajeError("Error al consultar los permisos del usuario o perfil no encontrado.");
+    console.error("Error RLS o perfil no encontrado:", profileError);
+    mostrarMensajeError("No se pudieron verificar los permisos. Revisa la consola o contacta al admin.");
     await supabaseClient.auth.signOut();
     return;
   }
 
   const profile = profiles[0];
 
+  // 3. Evaluar el estado
   if (profile.estado === 'pendiente') {
     alert("Tu cuenta fue creada con éxito, pero requiere la aprobación de la Dirección para acceder.");
     await supabaseClient.auth.signOut();
@@ -1936,10 +1948,10 @@ async function ejecutarLogin() {
     return;
   }
 
-  // 3. Si está aprobado, ingresa a la app
-  setAuthenticatedUser(data.user.email);
+  // 4. Si está aprobado, ingresa a la app
+  setAuthenticatedUser(authData.user.email);
 }
-
+  
 async function registrarUsuario() {
   const nombreInput = document.getElementById('authNombre');
   const nombre = nombreInput ? nombreInput.value.trim() : '';
