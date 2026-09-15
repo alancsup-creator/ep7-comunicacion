@@ -1894,22 +1894,48 @@ async function ejecutarLogin() {
   loginBtn.disabled = true;
   if (errorMsg) errorMsg.style.display = 'none';
 
+  // 1. Iniciar sesión en Supabase
   const { data, error } = await supabaseClient.auth.signInWithPassword({
     email: email,
     password: password,
   });
 
-  loginBtn.innerText = "Ingresar";
-  loginBtn.disabled = false;
-
   if (error) {
-    if (errorMsg) {
-      errorMsg.innerText = "Acceso denegado: " + error.message;
-      errorMsg.style.display = 'block';
-    }
+    loginBtn.innerText = "Ingresar";
+    loginBtn.disabled = false;
+    mostrarMensajeError("Acceso denegado: " + error.message);
     return;
   }
 
+  // 2. Verificar estado en la tabla profiles
+  const { data: profile, error: profileError } = await supabaseClient
+    .from('profiles')
+    .select('estado')
+    .eq('id', data.user.id)
+    .single();
+
+  loginBtn.innerText = "Ingresar";
+  loginBtn.disabled = false;
+
+  if (profileError || !profile) {
+    mostrarMensajeError("Error al consultar los permisos del usuario.");
+    await supabaseClient.auth.signOut();
+    return;
+  }
+
+  if (profile.estado === 'pendiente') {
+    alert("Tu cuenta fue creada con éxito, pero requiere la aprobación de la Dirección para acceder.");
+    await supabaseClient.auth.signOut();
+    return;
+  }
+
+  if (profile.estado === 'rechazado') {
+    alert("Tu acceso no ha sido autorizado.");
+    await supabaseClient.auth.signOut();
+    return;
+  }
+
+  // 3. Si está aprobado, ingresa a la app
   setAuthenticatedUser(data.user.email);
 }
 
@@ -1952,7 +1978,10 @@ async function registrarUsuario() {
   if (error) {
     mostrarMensajeError('Error al registrar: ' + error.message);
   } else if (data.user) {
-    setAuthenticatedUser(data.user.email);
+    // Al registrarse, se desloguea inmediatamente y avisa que debe ser aprobado
+    await supabaseClient.auth.signOut();
+    alert("Cuenta registrada con éxito. Estado: PENDIENTE DE APROBACIÓN por la Dirección.");
+    toggleModoRegistro();
   }
 }
 
@@ -1964,47 +1993,36 @@ function mostrarMensajeError(msg) {
     errorMsg.innerText = msg;
   }
 }
-  function setAuthenticatedUser(email) {
-    document.getElementById('loginSection').style.display = 'none';
-    document.getElementById('mainContent').classList.add('authenticated');
-    document.getElementById('userStatus').innerText = email;
 
-    if (email.includes('director') || email.includes('admin')) {
-      document.getElementById('adminTab').style.display = 'flex';
-    }
-  }
-
-  async function logout() {
-    await supabaseClient.auth.signOut();
-    document.getElementById('loginSection').style.display = 'flex';
-    document.getElementById('mainContent').classList.remove('authenticated');
-    document.getElementById('userStatus').innerText = 'Invitado';
-    document.getElementById('adminTab').style.display = 'none';
-    closeMenu();
-  }
-
-  // 1. Modificá tu función setAuthenticatedUser existente agregando la última línea:
 function setAuthenticatedUser(email) {
   document.getElementById('loginSection').style.display = 'none';
   document.getElementById('mainContent').classList.add('authenticated');
-  document.getElementById('userStatus').innerText = email;
+  const userStatus = document.getElementById('userStatus');
+  if (userStatus) userStatus.innerText = email;
 
-  if (email.includes('director') || email.includes('admin')) {
-    document.getElementById('adminTab').style.display = 'flex';
+  const adminTab = document.getElementById('adminTab');
+  if (adminTab && (email.includes('director') || email.includes('admin') || email === 'acsup@ep7.com')) {
+    adminTab.style.display = 'flex';
   }
 
-  // AGREGÁ ESTA LÍNEA ACÁ PARA ACTIVAR LA PESTAÑA 5:
   verificarPermisosDirector(email);
 }
 
+async function logout() {
+  await supabaseClient.auth.signOut();
+  document.getElementById('loginSection').style.display = 'flex';
+  document.getElementById('mainContent').classList.remove('authenticated');
+  const userStatus = document.getElementById('userStatus');
+  if (userStatus) userStatus.innerText = 'Invitado';
+  
+  const adminTab = document.getElementById('adminTab');
+  if (adminTab) adminTab.style.display = 'none';
 
-// =========================================================
-// 2. PEGÁ TODO ESTE BLOQUE NUEVO JUSTO DEBAJO DE LO ANTERIOR:
-// =========================================================
+  if (typeof closeMenu === 'function') closeMenu();
+}
 
 let esDirector = false;
 
-// Determina los permisos al iniciar sesión
 function verificarPermisosDirector(userEmail) {
   if (!userEmail) return;
   
@@ -2018,7 +2036,6 @@ function verificarPermisosDirector(userEmail) {
   cargarFechasImportantes();
 }
 
-// Cargar fechas evitando que la app se cuelgue en blanco
 async function cargarFechasImportantes() {
   const contenedor = document.getElementById('listaFechasImportantes');
   if (!contenedor) return;
@@ -2063,7 +2080,6 @@ async function cargarFechasImportantes() {
     contenedor.innerHTML = '<p style="color: #ef4444;">Error al cargar las fechas. Verificá que la tabla exista en Supabase.</p>';
   }
 }
-
 // Guardar fecha importante
 async function guardarFechaImportante(e) {
   e.preventDefault();
