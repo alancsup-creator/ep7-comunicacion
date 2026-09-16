@@ -2701,6 +2701,8 @@ function filtrarTablaInasistencias() {
   const buscador = document.getElementById('inputBuscarInasistencia').value.toLowerCase().trim();
   const anio = document.getElementById('selectAnioInasistencias').value.toLowerCase().trim();
   const seccion = document.getElementById('selectSeccionInasistencias').value.toLowerCase().trim();
+  
+  // Normalizamos el número de sección seleccionada (extrae el número puro: "2ª" -> "2")
   const numSeccion = seccion.replace(/[^0-9]/g, '');
 
   const filas = document.querySelectorAll('#tablaInasistencias tbody tr');
@@ -2710,8 +2712,23 @@ function filtrarTablaInasistencias() {
     const alumnoTd = fila.children[1] ? fila.children[1].innerText.toLowerCase() : '';
 
     const coincideNombre = alumnoTd.includes(buscador);
-    const coincideAnio = !anio || cursoTd.includes(anio);
-    const coincideSeccion = !seccion || cursoTd.includes(seccion) || (numSeccion && cursoTd.includes(numSeccion));
+    
+    // Verificación de año (1°, 2°, 3°, etc.)
+    const coincideAnio = !anio || cursoTd.includes(anio.replace(/[^0-9]/g, ''));
+
+    // Verificación flexible de sección
+    let coincideSeccion = true;
+    if (seccion) {
+      // Extraemos los números del texto del curso (ej: "2° 2°" -> ["2", "2"])
+      const numerosEnCurso = cursoTd.match(/\d+/g);
+      
+      // Si el texto tiene año y división/sección, la sección suele ser el segundo número
+      if (numerosEnCurso && numerosEnCurso.length >= 2) {
+        coincideSeccion = (numerosEnCurso[1] === numSeccion);
+      } else {
+        coincideSeccion = cursoTd.includes(seccion) || (numSeccion && cursoTd.includes(numSeccion));
+      }
+    }
 
     if (coincideNombre && coincideAnio && coincideSeccion) {
       fila.style.display = '';
