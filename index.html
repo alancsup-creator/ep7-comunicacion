@@ -458,142 +458,161 @@
     </div>
   </section>
   
-  <!-- Pestaña 3: Inasistencias y Seguimiento -->
+<!-- Pestaña 3: Inasistencias y Seguimiento -->
 <section id="inasistencias" class="tab-content" style="display: none;">
   <h2>📅 Registro y Control Institucional de Asistencia</h2>
 
-  <!-- Barra de Filtros, Mes y Configuración de Días -->
-  <div style="display: flex; gap: 10px; flex-wrap: wrap; margin-bottom: 15px; background: white; padding: 15px; border-radius: 8px; box-shadow: 0 1px 3px rgba(0,0,0,0.1); align-items: flex-end;">
+  <!-- Encabezado y Filtros Principales -->
+  <div style="background: white; border-radius: 12px; padding: 16px; margin-bottom: 16px; box-shadow: 0 1px 3px rgba(0,0,0,0.1);">
     
-    <!-- Selección de Mes -->
-    <div style="flex: 1; min-width: 140px;">
-  <label style="font-size: 12px; font-weight: bold; color: #475569;">Mes a Registrar:</label>
-  <input 
-    type="month" 
-    id="mesInasistencias" 
-    onchange="cambiarMesInasistencias()" 
-    style="width: 100%; padding: 8px; font-size: 14px; border: 1px solid #ccc; border-radius: 6px;"
-  >
-</div>
+    <div style="display: flex; gap: 12px; flex-wrap: wrap; align-items: flex-end; margin-bottom: 16px;">
+      
+      <!-- Selección de Mes -->
+      <div style="flex: 1; min-width: 140px;">
+        <label style="font-size: 12px; font-weight: bold; color: #475569;">Mes a Registrar:</label>
+        <input 
+          type="month" 
+          id="mesInasistencias" 
+          onchange="cambiarMesInasistencias()" 
+          style="width: 100%; padding: 8px; font-size: 14px; border: 1px solid #cbd5e1; border-radius: 6px;"
+        >
+      </div>
 
-    <!-- Días Escolares del Mes -->
-    <div style="flex: 1; min-width: 120px;">
-      <label style="font-size: 12px; font-weight: bold; color: #475569;">Días de Clase (Mes):</label>
-      <input 
-        type="number" 
-        id="diasClaseMes" 
-        value="20" 
-        min="1" 
-        max="31" 
-        onchange="recambiarDiasClaseMes()" 
-        style="width: 100%; padding: 8px; font-size: 14px; border: 1px solid #ccc; border-radius: 6px;"
-      >
+      <!-- Días Escolares del Mes -->
+      <div style="width: 120px;">
+        <label style="font-size: 12px; font-weight: bold; color: #475569;">Días de Clase:</label>
+        <input 
+          type="number" 
+          id="diasClaseMes" 
+          value="20" 
+          min="1" 
+          max="31" 
+          onchange="recambiarDiasClaseMes()" 
+          style="width: 100%; padding: 8px; font-size: 14px; border: 1px solid #cbd5e1; border-radius: 6px; text-align: center; font-weight: bold;"
+        >
+      </div>
+
+      <!-- Filtro por Año -->
+      <div style="flex: 1; min-width: 110px;">
+        <label style="font-size: 12px; font-weight: bold; color: #475569;">Año:</label>
+        <select id="selectAnioInasistencias" onchange="filtrarTablaInasistencias()" style="width: 100%; padding: 8px; font-size: 14px; border: 1px solid #cbd5e1; border-radius: 6px;">
+          <option value="">Todos</option>
+          <option value="1°">1° Año</option>
+          <option value="2°">2° Año</option>
+          <option value="3°">3° Año</option>
+          <option value="4°">4° Año</option>
+          <option value="5°">5° Año</option>
+          <option value="6°">6° Año</option>
+        </select>
+      </div>
+
+      <!-- Filtro por Sección -->
+      <div style="flex: 1; min-width: 110px;">
+        <label style="font-size: 12px; font-weight: bold; color: #475569;">Sección:</label>
+        <select id="selectSeccionInasistencias" onchange="filtrarTablaInasistencias()" style="width: 100%; padding: 8px; font-size: 14px; border: 1px solid #cbd5e1; border-radius: 6px;">
+          <option value="">Todas</option>
+          <option value="1ª">1ª Sección</option>
+          <option value="2ª">2ª Sección</option>
+          <option value="3ª">3ª Sección</option>
+          <option value="4ª">4ª Sección</option>
+        </select>
+      </div>
+
+      <!-- Buscador por Nombre -->
+      <div style="flex: 2; min-width: 180px;">
+        <label style="font-size: 12px; font-weight: bold; color: #475569;">Buscar Alumno:</label>
+        <input 
+          type="text" 
+          id="inputBuscarInasistencia" 
+          onkeyup="filtrarTablaInasistencias()" 
+          placeholder="🔍 Apellido..." 
+          style="width: 100%; padding: 8px; font-size: 14px; border: 1px solid #cbd5e1; border-radius: 6px;"
+        >
+      </div>
+
     </div>
 
-    <!-- Filtro por Año -->
-    <div style="flex: 1; min-width: 110px;">
-      <label style="font-size: 12px; font-weight: bold; color: #475569;">Año:</label>
-      <select 
-        id="selectAnioInasistencias" 
-        onchange="filtrarTablaInasistencias()" 
-        style="width: 100%; padding: 8px; font-size: 14px; border: 1px solid #ccc; border-radius: 6px;"
+    <!-- Navegación por Sub-pestañas -->
+    <div style="display: flex; gap: 8px; border-bottom: 2px solid #e2e8f0; margin-top: 10px;">
+      <button 
+        id="btnSubTabPlanilla" 
+        onclick="cambiarSubPestanaInasistencias('planilla')" 
+        style="padding: 10px 16px; font-weight: bold; font-size: 14px; border: none; background: none; border-bottom: 3px solid #2563eb; color: #2563eb; cursor: pointer;"
       >
-        <option value="">Todos</option>
-        <option value="1°">1° Año</option>
-        <option value="2°">2° Año</option>
-        <option value="3°">3° Año</option>
-        <option value="4°">4° Año</option>
-        <option value="5°">5° Año</option>
-        <option value="6°">6° Año</option>
-      </select>
-    </div>
+        📋 Planilla de Carga
+      </button>
 
-    <!-- Filtro por Sección -->
-    <div style="flex: 1; min-width: 110px;">
-      <label style="font-size: 12px; font-weight: bold; color: #475569;">Sección:</label>
-      <select 
-        id="selectSeccionInasistencias" 
-        onchange="filtrarTablaInasistencias()" 
-        style="width: 100%; padding: 8px; font-size: 14px; border: 1px solid #ccc; border-radius: 6px;"
+      <button 
+        id="btnSubTabAlerta" 
+        onclick="cambiarSubPestanaInasistencias('alerta')" 
+        style="padding: 10px 16px; font-weight: bold; font-size: 14px; border: none; background: none; border-bottom: 3px solid transparent; color: #64748b; cursor: pointer; display: flex; align-items: center; gap: 6px;"
       >
-        <option value="">Todas</option>
-        <option value="1ª">1ª Sección</option>
-        <option value="2ª">2ª Sección</option>
-        <option value="3ª">3ª Sección</option>
-        <option value="4ª">4ª Sección</option>
-      </select>
-    </div>
-
-    <!-- Buscador -->
-    <div style="flex: 2; min-width: 180px;">
-      <label style="font-size: 12px; font-weight: bold; color: #475569;">Buscar Alumno:</label>
-      <input 
-        type="text" 
-        id="inputBuscarInasistencia" 
-        onkeyup="filtrarTablaInasistencias()" 
-        placeholder="🔍 Apellido..." 
-        style="width: 100%; padding: 8px; font-size: 14px; border: 1px solid #ccc; border-radius: 6px;"
-      >
+        🚨 Casos de Riesgo / Alerta
+        <span id="badgeContadorAlerta" style="background: #ef4444; color: white; border-radius: 10px; padding: 2px 7px; font-size: 11px; font-weight: bold; display: none;">0</span>
+      </button>
     </div>
 
   </div>
 
-<!-- Tabla General de Registro Mensual -->
-<div class="table-responsive">
-  <table id="tablaInasistencias" class="control-table">
-    <thead>
-      <tr>
-        <th>Curso / Sec.</th>
-        <th>Alumno</th>
-        <th style="width: 120px; text-align: center;">Inasistencias</th>
-        <th style="width: 100px; text-align: center;">Asist. Mes</th>
-        <th style="width: 130px; text-align: center;">% de inasistencia</th>
-        <!-- Celda destacada con color personalizado -->
-        <th style="width: 120px; text-align: center; background-color: #fef3c7; color: #92400e; border-left: 2px solid #f59e0b; border-right: 1px solid #fde68a;">
-          📊 Acum. Anual
-        </th>
-        <th style="width: 100px; text-align: center; background-color: #fffbe3; color: #78350f;">% Anual</th>
-        <th style="width: 120px; text-align: center;">Estado</th>
-      </tr>
-    </thead>
-    <tbody>
-      <!-- Se genera dinámicamente -->
-    </tbody>
-  </table>
-</div>
-  
-  <!-- Panel de Seguimiento Prioritario -->
-  <div style="margin-top: 30px; background: #fff; border: 1px solid #e2e8f0; border-radius: 8px; padding: 20px; box-shadow: 0 1px 3px rgba(0,0,0,0.05);">
-    <h3 style="margin-top: 0; color: #b91c1c; display: flex; align-items: center; gap: 8px;">
-      ⚠️ Alumnos en Seguimiento por Inasistencia (Riesgo y Alerta)
-    </h3>
-    <p style="color: #64748b; font-size: 14px; margin-bottom: 15px;">
-      Listado automático de estudiantes que presentan un porcentaje de asistencia anual inferior al 85% o acumulan faltas reiteradas.
-    </p>
-
-    <div class="table-responsive">
-      <table id="tablaSeguimientoAlumnos" class="control-table" style="border-top: 2px solid #ef4444;">
+  <!-- SUB-PESTAÑA 1: PLANILLA DE REGISTRO COMPLETO -->
+  <div id="subTabPlanillaInasistencias">
+    <div class="table-responsive" style="background: white; border-radius: 12px; padding: 12px; box-shadow: 0 1px 3px rgba(0,0,0,0.1);">
+      <table id="tablaInasistencias" class="control-table" style="width: 100%;">
         <thead>
-          <tr style="background: #fef2f2;">
+          <tr>
             <th>Curso / Sec.</th>
             <th>Alumno</th>
-            <th style="text-align: center;">Faltas Acumuladas</th>
-            <th style="text-align: center;">% Asistencia Anual</th>
-            <th style="text-align: center;">Estado Actual</th>
+            <th style="width: 120px; text-align: center;">Inasistencias</th>
+            <th style="width: 100px; text-align: center;">Asist. Mes</th>
+            <th style="width: 130px; text-align: center;">% de inasistencia</th>
+            <th style="width: 120px; text-align: center; background-color: #fef3c7; color: #92400e; border-left: 2px solid #f59e0b; border-right: 1px solid #fde68a;">📊 Acum. Anual</th>
+            <th style="width: 100px; text-align: center; background-color: #fffbe3; color: #78350f;">% Anual</th>
+            <th style="width: 120px; text-align: center;">Estado</th>
           </tr>
         </thead>
         <tbody>
-          <tr>
-            <td colspan="5" style="text-align: center; color: #94a3b8; padding: 15px;">
-              No hay estudiantes en situación de riesgo registrados en el período actual.
-            </td>
-          </tr>
+          <!-- Se genera dinámicamente -->
         </tbody>
       </table>
     </div>
   </div>
-</section>
-  
+
+  <!-- SUB-PESTAÑA 2: CUADRO DE ALERTAS Y SEGUIMIENTO -->
+  <div id="subTabAlertaInasistencias" style="display: none;">
+    <div style="background: white; border-radius: 12px; padding: 16px; box-shadow: 0 1px 3px rgba(0,0,0,0.1);">
+      <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 12px;">
+        <h3 style="margin: 0; color: #1e293b; font-size: 16px;">
+          🚨 Estudiantes Prioritarios para Seguimiento Institucional
+        </h3>
+        <span style="font-size: 13px; color: #64748b;">
+          Criterio: &lt; 85% de asistencia o &ge; 12 inasistencias acumuladas
+        </span>
+      </div>
+
+      <div class="table-responsive">
+        <table id="tablaSeguimientoAlumnos" class="control-table" style="width: 100%;">
+          <thead>
+            <tr style="background-color: #f8fafc;">
+              <th>Curso / Sec.</th>
+              <th>Alumno</th>
+              <th style="width: 120px; text-align: center; color: #b91c1c;">Faltas Anuales</th>
+              <th style="width: 120px; text-align: center;">% Asist. Anual</th>
+              <th style="width: 140px; text-align: center;">Estado</th>
+            </tr>
+          </thead>
+          <tbody>
+            <tr>
+              <td colspan="5" style="text-align: center; color: #64748b; padding: 20px;">
+                🎉 <strong>Sin situaciones críticas:</strong> No hay estudiantes en situación de riesgo o alerta registrados en el período actual.
+              </td>
+            </tr>
+          </tbody>
+        </table>
+      </div>
+    </div>
+  </div>
+
+</section>  
   <!-- Pestaña 4: Calificaciones -->
   <section id="calificaciones" class="tab-content" style="display: none;">
   <h2>📊 Control de Calificaciones e Informes por Docente</h2>
@@ -2768,6 +2787,73 @@ function filtrarTablaInasistencias() {
     } else {
       fila.style.display = 'none';
     }
+  });
+}
+
+  // Alternar sub-pestañas en Inasistencias
+function cambiarSubPestanaInasistencias(subTab) {
+  const divPlanilla = document.getElementById('subTabPlanillaInasistencias');
+  const divAlerta = document.getElementById('subTabAlertaInasistencias');
+  const btnPlanilla = document.getElementById('btnSubTabPlanilla');
+  const btnAlerta = document.getElementById('btnSubTabAlerta');
+
+  if (subTab === 'planilla') {
+    divPlanilla.style.display = 'block';
+    divAlerta.style.display = 'none';
+
+    btnPlanilla.style.borderBottom = '3px solid #2563eb';
+    btnPlanilla.style.color = '#2563eb';
+    btnAlerta.style.borderBottom = '3px solid transparent';
+    btnAlerta.style.color = '#64748b';
+  } else {
+    divPlanilla.style.display = 'none';
+    divAlerta.style.display = 'block';
+
+    btnAlerta.style.borderBottom = '3px solid #dc2626';
+    btnAlerta.style.color = '#dc2626';
+    btnPlanilla.style.borderBottom = '3px solid transparent';
+    btnPlanilla.style.color = '#64748b';
+  }
+}
+
+// Poblar tabla de seguimiento y actualizar badge numérico
+function poblarTablaSeguimiento(lista) {
+  const tbodySeguimiento = document.querySelector('#tablaSeguimientoAlumnos tbody');
+  const badge = document.getElementById('badgeContadorAlerta');
+  
+  if (!tbodySeguimiento) return;
+
+  if (badge) {
+    if (lista.length > 0) {
+      badge.innerText = lista.length;
+      badge.style.display = 'inline-block';
+    } else {
+      badge.style.display = 'none';
+    }
+  }
+
+  if (lista.length === 0) {
+    tbodySeguimiento.innerHTML = `
+      <tr>
+        <td colspan="5" style="text-align: center; color: #64748b; padding: 20px;">
+          🎉 <strong>Sin situaciones críticas:</strong> No hay estudiantes en situación de riesgo o alerta en el período activo.
+        </td>
+      </tr>
+    `;
+    return;
+  }
+
+  tbodySeguimiento.innerHTML = '';
+  lista.forEach(item => {
+    const tr = document.createElement('tr');
+    tr.innerHTML = `
+      <td><strong>${item.curso}</strong></td>
+      <td>${item.alumno}</td>
+      <td style="text-align: center; font-weight: bold; color: #b91c1c;">${item.faltas}</td>
+      <td style="text-align: center; font-weight: bold;">${item.pct}%</td>
+      <td style="text-align: center;">${item.estadoHTML}</td>
+    `;
+    tbodySeguimiento.appendChild(tr);
   });
 }
 </script>
