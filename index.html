@@ -458,15 +458,15 @@
     </div>
   </section>
   
-  <!-- Pestaña 3: Inasistencias -->
+  <!-- Pestaña 3: Inasistencias y Seguimiento -->
 <section id="inasistencias" class="tab-content" style="display: none;">
-  <h2>📅 Registro Mensual de Inasistencias</h2>
+  <h2>📅 Registro y Control Institucional de Asistencia</h2>
 
-  <!-- Barra de Filtros y Selección de Mes -->
-  <div style="display: flex; gap: 10px; flex-wrap: wrap; margin-bottom: 15px; background: white; padding: 15px; border-radius: 8px; box-shadow: 0 1px 3px rgba(0,0,0,0.1);">
+  <!-- Barra de Filtros, Mes y Configuración de Días -->
+  <div style="display: flex; gap: 10px; flex-wrap: wrap; margin-bottom: 15px; background: white; padding: 15px; border-radius: 8px; box-shadow: 0 1px 3px rgba(0,0,0,0.1); align-items: flex-end;">
     
     <!-- Selección de Mes -->
-    <div style="flex: 1; min-width: 150px;">
+    <div style="flex: 1; min-width: 140px;">
       <label style="font-size: 12px; font-weight: bold; color: #475569;">Mes a Registrar:</label>
       <input 
         type="month" 
@@ -476,15 +476,29 @@
       >
     </div>
 
-    <!-- Filtro por Año -->
+    <!-- Días Escolares del Mes -->
     <div style="flex: 1; min-width: 120px;">
+      <label style="font-size: 12px; font-weight: bold; color: #475569;">Días de Clase (Mes):</label>
+      <input 
+        type="number" 
+        id="diasClaseMes" 
+        value="20" 
+        min="1" 
+        max="31" 
+        onchange="recambiarDiasClaseMes()" 
+        style="width: 100%; padding: 8px; font-size: 14px; border: 1px solid #ccc; border-radius: 6px;"
+      >
+    </div>
+
+    <!-- Filtro por Año -->
+    <div style="flex: 1; min-width: 110px;">
       <label style="font-size: 12px; font-weight: bold; color: #475569;">Año:</label>
       <select 
         id="selectAnioInasistencias" 
         onchange="filtrarTablaInasistencias()" 
         style="width: 100%; padding: 8px; font-size: 14px; border: 1px solid #ccc; border-radius: 6px;"
       >
-        <option value="">Todos los Años</option>
+        <option value="">Todos</option>
         <option value="1°">1° Año</option>
         <option value="2°">2° Año</option>
         <option value="3°">3° Año</option>
@@ -495,14 +509,14 @@
     </div>
 
     <!-- Filtro por Sección -->
-    <div style="flex: 1; min-width: 120px;">
+    <div style="flex: 1; min-width: 110px;">
       <label style="font-size: 12px; font-weight: bold; color: #475569;">Sección:</label>
       <select 
         id="selectSeccionInasistencias" 
         onchange="filtrarTablaInasistencias()" 
         style="width: 100%; padding: 8px; font-size: 14px; border: 1px solid #ccc; border-radius: 6px;"
       >
-        <option value="">Todas las Secciones</option>
+        <option value="">Todas</option>
         <option value="1ª">1ª Sección</option>
         <option value="2ª">2ª Sección</option>
         <option value="3ª">3ª Sección</option>
@@ -510,39 +524,73 @@
       </select>
     </div>
 
-    <!-- Buscador de Alumno -->
-    <div style="flex: 2; min-width: 200px;">
+    <!-- Buscador -->
+    <div style="flex: 2; min-width: 180px;">
       <label style="font-size: 12px; font-weight: bold; color: #475569;">Buscar Alumno:</label>
       <input 
         type="text" 
         id="inputBuscarInasistencia" 
         onkeyup="filtrarTablaInasistencias()" 
-        placeholder="🔍 Apellido del alumno..." 
+        placeholder="🔍 Apellido..." 
         style="width: 100%; padding: 8px; font-size: 14px; border: 1px solid #ccc; border-radius: 6px;"
       >
     </div>
 
   </div>
 
-  <!-- Tabla de Inasistencias -->
+  <!-- Tabla General de Registro Mensual -->
   <div class="table-responsive">
     <table id="tablaInasistencias" class="control-table">
       <thead>
         <tr>
           <th>Curso / Sec.</th>
           <th>Alumno</th>
-          <th style="width: 140px; text-align: center;">Justificadas</th>
-          <th style="width: 140px; text-align: center;">Injustificadas</th>
-          <th style="width: 110px; text-align: center;">Total Mes</th>
+          <th style="width: 100px; text-align: center;">Faltas Mes</th>
+          <th style="width: 100px; text-align: center;">Asist. Mes</th>
+          <th style="width: 100px; text-align: center;">% Mes</th>
+          <th style="width: 110px; text-align: center; background: #f1f5f9;">Acum. Anual</th>
+          <th style="width: 100px; text-align: center; background: #f1f5f9;">% Anual</th>
+          <th style="width: 120px; text-align: center;">Estado</th>
         </tr>
       </thead>
       <tbody>
-        <!-- Se clona o completa dinámicamente según la nómina de alumnos existente -->
+        <!-- Se genera dinámicamente -->
       </tbody>
     </table>
   </div>
-</section>
 
+  <!-- Panel de Seguimiento Prioritario -->
+  <div style="margin-top: 30px; background: #fff; border: 1px solid #e2e8f0; border-radius: 8px; padding: 20px; box-shadow: 0 1px 3px rgba(0,0,0,0.05);">
+    <h3 style="margin-top: 0; color: #b91c1c; display: flex; align-items: center; gap: 8px;">
+      ⚠️ Alumnos en Seguimiento por Inasistencia (Riesgo y Alerta)
+    </h3>
+    <p style="color: #64748b; font-size: 14px; margin-bottom: 15px;">
+      Listado automático de estudiantes que presentan un porcentaje de asistencia anual inferior al 85% o acumulan faltas reiteradas.
+    </p>
+
+    <div class="table-responsive">
+      <table id="tablaSeguimientoAlumnos" class="control-table" style="border-top: 2px solid #ef4444;">
+        <thead>
+          <tr style="background: #fef2f2;">
+            <th>Curso / Sec.</th>
+            <th>Alumno</th>
+            <th style="text-align: center;">Faltas Acumuladas</th>
+            <th style="text-align: center;">% Asistencia Anual</th>
+            <th style="text-align: center;">Estado Actual</th>
+          </tr>
+        </thead>
+        <tbody>
+          <tr>
+            <td colspan="5" style="text-align: center; color: #94a3b8; padding: 15px;">
+              No hay estudiantes en situación de riesgo registrados en el período actual.
+            </td>
+          </tr>
+        </tbody>
+      </table>
+    </div>
+  </div>
+</section>
+  
   <!-- Pestaña 4: Calificaciones -->
   <section id="calificaciones" class="tab-content" style="display: none;">
   <h2>📊 Control de Calificaciones e Informes por Docente</h2>
@@ -2379,7 +2427,7 @@ document.addEventListener('DOMContentLoaded', () => {
   cargarEstadosCalificaciones();
 });
 
-// 1. Inicialización y clonación de alumnos al cargar la página
+// 1. Inicializar mes y estructurar tabla al cargar
 document.addEventListener('DOMContentLoaded', () => {
   const inputMes = document.getElementById('mesInasistencias');
   if (inputMes && !inputMes.value) {
@@ -2389,11 +2437,10 @@ document.addEventListener('DOMContentLoaded', () => {
     inputMes.value = `${yyyy}-${mm}`;
   }
 
-  // Poblar la tabla de inasistencias usando los alumnos de la Pestaña 6
   poblarTablaInasistencias();
 });
 
-// 2. Función para clonar la nómina desde la Pestaña 6
+// 2. Poblado de tabla clonando alumnos de la Pestaña 6
 function poblarTablaInasistencias() {
   const tbodyAlumnos = document.querySelector('#tablaAlumnos tbody');
   const tbodyInasistencias = document.querySelector('#tablaInasistencias tbody');
@@ -2409,7 +2456,6 @@ function poblarTablaInasistencias() {
 
     if (!alumno) return;
 
-    // Se usa un ID único consistente basado en el índice o atributo
     const alumnoId = fila.getAttribute('data-alumno-id') || `alumno_${index + 1}`;
 
     const tr = document.createElement('tr');
@@ -2419,22 +2465,238 @@ function poblarTablaInasistencias() {
       <td><strong>${curso}</strong></td>
       <td>${alumno}</td>
       <td style="text-align: center;">
-        <input type="number" min="0" value="0" class="input-justificadas" onchange="guardarInasistencia(this)" style="width: 60px; text-align: center; padding: 4px; border: 1px solid #ccc; border-radius: 4px;">
+        <input 
+          type="number" 
+          step="0.5" 
+          min="0" 
+          value="0" 
+          class="input-faltas" 
+          onchange="guardarInasistencia(this)" 
+          style="width: 70px; text-align: center; padding: 5px; font-weight: bold; border: 1px solid #ccc; border-radius: 4px;"
+        >
       </td>
-      <td style="text-align: center;">
-        <input type="number" min="0" value="0" class="input-injustificadas" onchange="guardarInasistencia(this)" style="width: 60px; text-align: center; padding: 4px; border: 1px solid #ccc; border-radius: 4px;">
+      <td style="text-align: center;" class="asistencia-mes">0</td>
+      <td style="text-align: center; font-weight: bold;" class="porcentaje-mes">100%</td>
+      <td style="text-align: center; font-weight: bold; background: #f8fafc;" class="total-anual-acumulado">0</td>
+      <td style="text-align: center; font-weight: bold; background: #f8fafc;" class="porcentaje-anual">100%</td>
+      <td style="text-align: center;" class="estado-asistencia">
+        <span style="background: #dcfce7; color: #15803d; padding: 3px 8px; border-radius: 12px; font-size: 12px; font-weight: bold;">Regular</span>
       </td>
-      <td style="text-align: center; font-weight: bold;" class="total-inasistencias">0</td>
     `;
 
     tbodyInasistencias.appendChild(tr);
   });
 
-  // Una vez creadas las filas, traemos las faltas guardadas de Supabase
   cargarInasistenciasMensuales();
 }
 
-// 3. Filtrar tabla por año, sección y nombre
+// 3. Modificar días de clase del mes y recalcular filas
+function recambiarDiasClaseMes() {
+  document.querySelectorAll('#tablaInasistencias tbody tr').forEach(fila => {
+    recalcularFila(fila);
+  });
+}
+
+// 4. Recalcular valores mensuales de una fila
+function recalcularFila(fila) {
+  const inputFaltas = fila.querySelector('.input-faltas');
+  const celdaAsistencia = fila.querySelector('.asistencia-mes');
+  const celdaPctMes = fila.querySelector('.porcentaje-mes');
+  const diasClase = parseFloat(document.getElementById('diasClaseMes').value) || 20;
+
+  const faltas = parseFloat(inputFaltas.value) || 0;
+  const asistencias = Math.max(0, diasClase - faltas);
+  const pctMes = diasClase > 0 ? Math.round((asistencias / diasClase) * 100) : 100;
+
+  if (celdaAsistencia) celdaAsistencia.innerText = asistencias;
+  if (celdaPctMes) celdaPctMes.innerText = `${pctMes}%`;
+}
+
+// 5. Guardar registro individual en Supabase
+async function guardarInasistencia(inputEl) {
+  const fila = inputEl.closest('tr');
+  const alumnoId = fila.getAttribute('data-alumno-id');
+  const mes = document.getElementById('mesInasistencias').value;
+  const diasClase = parseInt(document.getElementById('diasClaseMes').value) || 20;
+
+  if (!mes) {
+    alert("Seleccioná un mes para guardar el registro.");
+    return;
+  }
+
+  recalcularFila(fila);
+  const faltasVal = parseFloat(inputEl.value) || 0;
+
+  const payload = {
+    alumno_id: alumnoId,
+    mes: mes,
+    dias_clase: diasClase,
+    faltas: faltasVal,
+    updated_at: new Date().toISOString()
+  };
+
+  const { error } = await supabaseClient
+    .from('inasistencias_alumnos')
+    .upsert(payload, { onConflict: 'alumno_id,mes' });
+
+  if (error) {
+    console.error('Error al guardar inasistencia:', error);
+  } else {
+    cargarAcumuladoAnual();
+  }
+}
+
+// 6. Cargar datos del mes seleccionado
+async function cargarInasistenciasMensuales() {
+  const mes = document.getElementById('mesInasistencias').value;
+  if (!mes) return;
+
+  const { data, error } = await supabaseClient
+    .from('inasistencias_alumnos')
+    .select('*')
+    .eq('mes', mes);
+
+  if (error) {
+    console.error('Error al cargar inasistencias:', error);
+    return;
+  }
+
+  document.querySelectorAll('#tablaInasistencias tbody tr').forEach(fila => {
+    const inputFaltas = fila.querySelector('.input-faltas');
+    if (inputFaltas) inputFaltas.value = 0;
+    recalcularFila(fila);
+  });
+
+  if (data && data.length > 0) {
+    if (data[0].dias_clase) {
+      document.getElementById('diasClaseMes').value = data[0].dias_clase;
+    }
+
+    data.forEach(rec => {
+      const fila = document.querySelector(`#tablaInasistencias tbody tr[data-alumno-id="${rec.alumno_id}"]`);
+      if (fila) {
+        const inputFaltas = fila.querySelector('.input-faltas');
+        if (inputFaltas) inputFaltas.value = rec.faltas || 0;
+        recalcularFila(fila);
+      }
+    });
+  }
+
+  cargarAcumuladoAnual();
+}
+
+// 7. Calcular métricas anuales, estados (Regular / Riesgo / Alerta) y panel de seguimiento
+async function cargarAcumuladoAnual() {
+  const inputMes = document.getElementById('mesInasistencias');
+  if (!inputMes || !inputMes.value) return;
+
+  const anio = inputMes.value.split('-')[0];
+
+  const { data, error } = await supabaseClient
+    .from('inasistencias_alumnos')
+    .select('alumno_id, faltas, dias_clase')
+    .gte('mes', `${anio}-01`)
+    .lte('mes', `${anio}-12`);
+
+  if (error) {
+    console.error('Error al calcular el acumulado anual:', error);
+    return;
+  }
+
+  const acumulados = {};
+  const diasTotalesAnio = {};
+
+  if (data) {
+    data.forEach(rec => {
+      const faltas = parseFloat(rec.faltas) || 0;
+      const dias = parseInt(rec.dias_clase) || 20;
+
+      acumulados[rec.alumno_id] = (acumulados[rec.alumno_id] || 0) + faltas;
+      diasTotalesAnio[rec.alumno_id] = (diasTotalesAnio[rec.alumno_id] || 0) + dias;
+    });
+  }
+
+  const listaSeguimiento = [];
+
+  document.querySelectorAll('#tablaInasistencias tbody tr').forEach(fila => {
+    const alumnoId = fila.getAttribute('data-alumno-id');
+    const curso = fila.children[0] ? fila.children[0].innerText.trim() : '';
+    const alumnoNombre = fila.children[1] ? fila.children[1].innerText.trim() : '';
+
+    const celdaAcumulado = fila.querySelector('.total-anual-acumulado');
+    const celdaPctAnual = fila.querySelector('.porcentaje-anual');
+    const celdaEstado = fila.querySelector('.estado-asistencia');
+
+    const totalFaltasAnio = acumulados[alumnoId] || 0;
+    const totalDiasEscolares = diasTotalesAnio[alumnoId] || 20;
+    
+    const asistenciasAnio = Math.max(0, totalDiasEscolares - totalFaltasAnio);
+    const pctAnual = Math.round((asistenciasAnio / totalDiasEscolares) * 100);
+
+    if (celdaAcumulado) celdaAcumulado.innerText = totalFaltasAnio;
+    if (celdaPctAnual) celdaPctAnual.innerText = `${pctAnual}%`;
+
+    let estadoHTML = '';
+    let estadoTexto = 'Regular';
+
+    if (pctAnual < 75 || totalFaltasAnio >= 20) {
+      estadoTexto = 'Alerta';
+      estadoHTML = `<span style="background: #fef2f2; color: #dc2626; border: 1px solid #fca5a5; padding: 3px 8px; border-radius: 12px; font-size: 12px; font-weight: bold;">🚨 Alerta</span>`;
+    } else if (pctAnual < 85 || totalFaltasAnio >= 12) {
+      estadoTexto = 'Riesgo';
+      estadoHTML = `<span style="background: #fffbe3; color: #b45309; border: 1px solid #fde68a; padding: 3px 8px; border-radius: 12px; font-size: 12px; font-weight: bold;">⚠️ Riesgo</span>`;
+    } else {
+      estadoTexto = 'Regular';
+      estadoHTML = `<span style="background: #dcfce7; color: #15803d; padding: 3px 8px; border-radius: 12px; font-size: 12px; font-weight: bold;">✅ Regular</span>`;
+    }
+
+    if (celdaEstado) celdaEstado.innerHTML = estadoHTML;
+
+    if (estadoTexto === 'Riesgo' || estadoTexto === 'Alerta') {
+      listaSeguimiento.push({
+        curso: curso,
+        alumno: alumnoNombre,
+        faltas: totalFaltasAnio,
+        pct: pctAnual,
+        estadoHTML: estadoHTML
+      });
+    }
+  });
+
+  poblarTablaSeguimiento(listaSeguimiento);
+}
+
+// 8. Renderizar apartado de seguimiento prioritario
+function poblarTablaSeguimiento(lista) {
+  const tbodySeguimiento = document.querySelector('#tablaSeguimientoAlumnos tbody');
+  if (!tbodySeguimiento) return;
+
+  if (lista.length === 0) {
+    tbodySeguimiento.innerHTML = `
+      <tr>
+        <td colspan="5" style="text-align: center; color: #94a3b8; padding: 15px;">
+          No hay estudiantes en situación de riesgo o alerta registrados en el período actual.
+        </td>
+      </tr>
+    `;
+    return;
+  }
+
+  tbodySeguimiento.innerHTML = '';
+  lista.forEach(item => {
+    const tr = document.createElement('tr');
+    tr.innerHTML = `
+      <td><strong>${item.curso}</strong></td>
+      <td>${item.alumno}</td>
+      <td style="text-align: center; font-weight: bold; color: #b91c1c;">${item.faltas}</td>
+      <td style="text-align: center; font-weight: bold;">${item.pct}%</td>
+      <td style="text-align: center;">${item.estadoHTML}</td>
+    `;
+    tbodySeguimiento.appendChild(tr);
+  });
+}
+
+// 9. Filtrar tabla principal por Año, Sección y Nombre
 function filtrarTablaInasistencias() {
   const buscador = document.getElementById('inputBuscarInasistencia').value.toLowerCase().trim();
   const anio = document.getElementById('selectAnioInasistencias').value.toLowerCase().trim();
@@ -2455,87 +2717,6 @@ function filtrarTablaInasistencias() {
       fila.style.display = '';
     } else {
       fila.style.display = 'none';
-    }
-  });
-}
-
-// 4. Guardar inasistencias en Supabase cuando cambia un número
-async function guardarInasistencia(inputEl) {
-  const fila = inputEl.closest('tr');
-  const alumnoId = fila.getAttribute('data-alumno-id');
-  const mes = document.getElementById('mesInasistencias').value;
-
-  if (!mes) {
-    alert("Por favor, seleccioná un mes para guardar las inasistencias.");
-    return;
-  }
-
-  const justInput = fila.querySelector('.input-justificadas');
-  const injustInput = fila.querySelector('.input-injustificadas');
-  const totalTd = fila.querySelector('.total-inasistencias');
-
-  const justificadas = parseInt(justInput.value) || 0;
-  const injustificadas = parseInt(injustInput.value) || 0;
-
-  if (totalTd) {
-    totalTd.innerText = justificadas + injustificadas;
-  }
-
-  const payload = {
-    alumno_id: alumnoId,
-    mes: mes,
-    justificadas: justificadas,
-    injustificadas: injustificadas,
-    updated_at: new Date().toISOString()
-  };
-
-  const { error } = await supabaseClient
-    .from('inasistencias_alumnos')
-    .upsert(payload, { onConflict: 'alumno_id,mes' });
-
-  if (error) {
-    console.error('Error al guardar inasistencia:', error);
-  }
-}
-
-// 5. Cargar las inasistencias del mes seleccionado
-async function cargarInasistenciasMensuales() {
-  const mes = document.getElementById('mesInasistencias').value;
-  if (!mes) return;
-
-  const { data, error } = await supabaseClient
-    .from('inasistencias_alumnos')
-    .select('*')
-    .eq('mes', mes);
-
-  if (error) {
-    console.error('Error al cargar inasistencias:', error);
-    return;
-  }
-
-  // Reiniciar contadores a cero antes de volcar datos
-  document.querySelectorAll('#tablaInasistencias tbody tr').forEach(fila => {
-    const jIn = fila.querySelector('.input-justificadas');
-    const injIn = fila.querySelector('.input-injustificadas');
-    const totalTd = fila.querySelector('.total-inasistencias');
-    if (jIn) jIn.value = 0;
-    if (injIn) injIn.value = 0;
-    if (totalTd) totalTd.innerText = 0;
-  });
-
-  if (!data) return;
-
-  // Cargar datos existentes de Supabase
-  data.forEach(rec => {
-    const fila = document.querySelector(`#tablaInasistencias tbody tr[data-alumno-id="${rec.alumno_id}"]`);
-    if (fila) {
-      const jIn = fila.querySelector('.input-justificadas');
-      const injIn = fila.querySelector('.input-injustificadas');
-      const totalTd = fila.querySelector('.total-inasistencias');
-
-      if (jIn) jIn.value = rec.justificadas || 0;
-      if (injIn) injIn.value = rec.injustificadas || 0;
-      if (totalTd) totalTd.innerText = (rec.justificadas || 0) + (rec.injustificadas || 0);
     }
   });
 }
