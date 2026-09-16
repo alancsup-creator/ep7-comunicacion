@@ -2430,7 +2430,10 @@ document.addEventListener('DOMContentLoaded', () => {
   cargarEstadosCalificaciones();
 });
 
-// 1. Inicializar mes y estructurar tabla al cargar
+// Variable global en memoria para garantizar que el ID del alumno no cambie jamás entre meses
+let mapaAlumnosInasistencias = [];
+
+// 1. Inicialización de la pestaña de inasistencias
 document.addEventListener('DOMContentLoaded', () => {
   const inputMes = document.getElementById('mesInasistencias');
   if (inputMes && !inputMes.value) {
@@ -2440,152 +2443,29 @@ document.addEventListener('DOMContentLoaded', () => {
     inputMes.value = `${yyyy}-${mm}`;
   }
 
-  poblarTablaInasistencias();
+  // Esperar a que el DOM esté estable para sincronizar alumnos
+  setTimeout(() => {
+    poblarTablaInasistencias();
+  }, 300);
 });
 
-// 2. Poblado de tabla clonando alumnos con ID persistente basado en DNI/Nombre
+// 2. Construir la nómina en la tabla con un ID ultra-estable
 function poblarTablaInasistencias() {
-  const tbodyAlumnos = document.querySelector('#tablaAlumnos tbody');
   const tbodyInasistencias = document.querySelector('#tablaInasistencias tbody');
-
-  if (!tbodyAlumnos || !tbodyInasistencias) return;
-
-  tbodyInasistencias.innerHTML = '';
-  const filasAlumnos = tbodyAlumnos.querySelectorAll('tr');
-
-  filasAlumnos.forEach((fila, index) => {
-    const curso = fila.children[0] ? fila.children[0].innerText.trim() : '';
-    const alumno = fila.children[1] ? fila.children[1].innerText.trim() : '';
-
-    if (!alumno) return;
-
-    // Genera un ID persistente basado en DNI, atributo previo o nombre
-    const alumnoId = fila.getAttribute('data-alumno-id') || 
-                     fila.getAttribute('data-dni') || 
-                     `al_${alumno.toLowerCase().replace(/[^a-z0-9]/g, '_')}`;
-
-    const tr = document.createElement('tr');
-    tr.setAttribute('data-alumno-id', alumnoId);
-
-    tr.innerHTML = `
-      <td><strong>${curso}</strong></td>
-      <td>${alumno}</td>
-      <td style="text-align: center;">
-        <input 
-          type="number" 
-          step="0.5" 
-          min="0" 
-          value="0" 
-          class="input-faltas" 
-          onchange="guardarInasistencia(this)" 
-          style="width: 70px; text-align: center; padding: 5px; font-weight: bold; border: 1px solid #ccc; border-radius: 4px;"
-        >
-      </td>
-      <td style="text-align: center;" class="asistencia-mes">0</td>
-      <td style="text-align: center; font-weight: bold;" class="porcentaje-mes">0%</td>
-      <!-- Celda de Acumulado Anual con resaltado en amarillo tenue -->
-      <td style="text-align: center; font-weight: bold; background-color: #fef3c7; color: #92400e; border-left: 2px solid #f59e0b; border-right: 1px solid #fde68a;" class="total-anual-acumulado">
-        0
-      </td>
-      <td style="text-align: center; font-weight: bold; background-color: #fffbe3; color: #78350f;" class="porcentaje-anual">
-        100%
-      </td>
-      <td style="text-align: center;" class="estado-asistencia">
-        <span style="background: #dcfce7; color: #15803d; padding: 3px 8px; border-radius: 12px; font-size: 12px; font-weight: bold;">Regular</span>
-      </td>
-    `;
-
-    tbodyInasistencias.appendChild(tr);
-  });
-
-  cargarInasistenciasMensuales();
-}
-
-// 3. Modificar días de clase del mes y recalcular filas
-function recambiarDiasClaseMes() {
-  document.querySelectorAll('#tablaInasistencias tbody tr').forEach(fila => {
-    recalcularFila(fila);
-  });
-}
-
-// 4. Recalcular valores mensuales de una fila
-function recalcularFila(fila) {
-  const inputFaltas = fila.querySelector('.input-faltas');
-  const celdaAsistencia = fila.querySelector('.asistencia-mes');
-  const celdaPctInasistencia = fila.querySelector('.porcentaje-mes');
-  const diasClase = parseFloat(document.getElementById('diasClaseMes').value) || 20;
-
-  const faltas = parseFloat(inputFaltas.value) || 0;
-  const asistencias = Math.max(0, diasClase - faltas);
-  
-  // Porcentaje de inasistencia del mes activo
-  const pctInasistencia = diasClase > 0 ? Math.round((faltas / diasClase) * 100) : 0;
-
-  if (celdaAsistencia) celdaAsistencia.innerText = asistencias;
-  if (celdaPctInasistencia) celdaPctInasistencia.innerText = `${pctInasistencia}%`;
-}
-
-// 5. Guardar registro individual en Supabase
-async function guardarInasistencia(inputEl) {
-  const fila = inputEl.closest('tr');
-  const alumnoId = fila.getAttribute('data-alumno-id');
-  const mes = document.getElementById('mesInasistencias').value;
-  const diasClase = parseInt(document.getElementById('diasClaseMes').value) || 20;
-
-  if (!mes) {
-    alert("Seleccioná un mes para guardar el registro.");
-    return;
-  }
-
-  recalcularFila(fila);
-  const faltasVal = parseFloat(inputEl.value) || 0;
-
-  const payload = {
-    alumno_id: alumnoId,
-    mes: mes,
-    dias_clase: diasClase,
-    faltas: faltasVal,
-    updated_at: new Date().toISOString()
-  };
-
-  const { error } = await supabaseClient
-    .from('inasistencias_alumnos')
-    .upsert(payload, { onConflict: 'alumno_id,mes' });
-
-  if (error) {
-    console.error('Error al guardar inasistencia:', error);
-  } else {
-    cargarAcumuladoAnual();
-  }
-}
-
-// 1. Inicialización al cargar la página
-document.addEventListener('DOMContentLoaded', () => {
-  const inputMes = document.getElementById('mesInasistencias');
-  if (inputMes && !inputMes.value) {
-    const hoy = new Date();
-    const yyyy = hoy.getFullYear();
-    const mm = String(hoy.getMonth() + 1).padStart(2, '0');
-    inputMes.value = `${yyyy}-${mm}`;
-  }
-
-  poblarTablaInasistencias();
-});
-
-// 2. Poblado de tabla clonando alumnos con ID persistente
-function poblarTablaInasistencias() {
   const tbodyAlumnos = document.querySelector('#tablaAlumnos tbody');
-  const tbodyInasistencias = document.querySelector('#tablaInasistencias tbody');
 
-  if (!tbodyAlumnos || !tbodyInasistencias) return;
+  if (!tbodyInasistencias) return;
 
-  // Si ya existen las filas creadas en la tabla, solo recargamos los datos del mes seleccionado
-  if (tbodyInasistencias.children.length > 0) {
+  // Si ya tenemos el mapa cargado y las filas dibujadas, solo leemos los datos de Supabase del mes
+  if (mapaAlumnosInasistencias.length > 0 && tbodyInasistencias.children.length > 0) {
     cargarInasistenciasMensuales();
     return;
   }
 
+  if (!tbodyAlumnos) return;
+
   tbodyInasistencias.innerHTML = '';
+  mapaAlumnosInasistencias = [];
   const filasAlumnos = tbodyAlumnos.querySelectorAll('tr');
 
   filasAlumnos.forEach((fila, index) => {
@@ -2594,10 +2474,12 @@ function poblarTablaInasistencias() {
 
     if (!alumno) return;
 
-    // ID ultra-estable para no perder la asociación entre meses
+    // ID Unívoco Robusto: Usa el DNI/ID existente o normaliza el nombre y curso
     const alumnoId = fila.getAttribute('data-alumno-id') || 
                      fila.getAttribute('data-dni') || 
-                     `alumno_${alumno.toLowerCase().replace(/[^a-z0-9]/g, '_')}`;
+                     `al_${alumno.toLowerCase().replace(/[^a-z0-9]/g, '_')}`;
+
+    mapaAlumnosInasistencias.push({ id: alumnoId, curso: curso, nombre: alumno });
 
     const tr = document.createElement('tr');
     tr.setAttribute('data-alumno-id', alumnoId);
@@ -2632,17 +2514,11 @@ function poblarTablaInasistencias() {
     tbodyInasistencias.appendChild(tr);
   });
 
+  // Una vez dibujadas las filas en el DOM, consultamos Supabase
   cargarInasistenciasMensuales();
 }
 
-// 3. Modificar días de clase del mes y recalcular filas
-function recambiarDiasClaseMes() {
-  document.querySelectorAll('#tablaInasistencias tbody tr').forEach(fila => {
-    recalcularFila(fila);
-  });
-}
-
-// 4. Recalcular valores mensuales de una fila
+// 3. Recalcular valores visuales de la fila
 function recalcularFila(fila) {
   const inputFaltas = fila.querySelector('.input-faltas');
   const celdaAsistencia = fila.querySelector('.asistencia-mes');
@@ -2657,7 +2533,14 @@ function recalcularFila(fila) {
   if (celdaPctInasistencia) celdaPctInasistencia.innerText = `${pctInasistencia}%`;
 }
 
-// 5. Guardar registro individual en Supabase
+// 4. Modificar días de clase del mes
+function recambiarDiasClaseMes() {
+  document.querySelectorAll('#tablaInasistencias tbody tr').forEach(fila => {
+    recalcularFila(fila);
+  });
+}
+
+// 5. Guardar inasistencia individual en Supabase con Upsert
 async function guardarInasistencia(inputEl) {
   const fila = inputEl.closest('tr');
   const alumnoId = fila.getAttribute('data-alumno-id');
@@ -2687,16 +2570,24 @@ async function guardarInasistencia(inputEl) {
   if (error) {
     console.error('Error al guardar inasistencia en Supabase:', error);
   } else {
+    // Recalcular métricas del año
     cargarAcumuladoAnual();
   }
 }
 
-// 6. CARGAR DATOS DEL MES SELECCIONADO (VERSIÓN CORREGIDA QUE NO BORRA DATOS)
+// 6. Cargar las inasistencias del mes seleccionado sin blanquear datos
 async function cargarInasistenciasMensuales() {
   const inputMes = document.getElementById('mesInasistencias');
   if (!inputMes || !inputMes.value) return;
 
   const mes = inputMes.value.trim();
+
+  // Si la tabla no está creada aún, forzar el poblado primero
+  const tbodyInasistencias = document.querySelector('#tablaInasistencias tbody');
+  if (!tbodyInasistencias || tbodyInasistencias.children.length === 0) {
+    poblarTablaInasistencias();
+    return;
+  }
 
   const { data, error } = await supabaseClient
     .from('inasistencias_alumnos')
@@ -2708,10 +2599,11 @@ async function cargarInasistenciasMensuales() {
     return;
   }
 
-  const mapaInasistencias = {};
+  // Mapeo en un diccionario por alumno_id
+  const mapaMensual = {};
   if (data && data.length > 0) {
     data.forEach(item => {
-      mapaInasistencias[item.alumno_id] = item;
+      mapaMensual[item.alumno_id] = item;
     });
 
     if (data[0].dias_clase) {
@@ -2719,12 +2611,13 @@ async function cargarInasistenciasMensuales() {
     }
   }
 
+  // Actualizar la interfaz respetando la lista existente en pantalla
   document.querySelectorAll('#tablaInasistencias tbody tr').forEach(fila => {
     const alumnoId = fila.getAttribute('data-alumno-id');
     const inputFaltas = fila.querySelector('.input-faltas');
 
-    if (mapaInasistencias[alumnoId]) {
-      if (inputFaltas) inputFaltas.value = mapaInasistencias[alumnoId].faltas || 0;
+    if (mapaMensual[alumnoId]) {
+      if (inputFaltas) inputFaltas.value = mapaMensual[alumnoId].faltas || 0;
     } else {
       if (inputFaltas) inputFaltas.value = 0;
     }
@@ -2735,7 +2628,7 @@ async function cargarInasistenciasMensuales() {
   cargarAcumuladoAnual();
 }
 
-// 7. Métricas acumuladas anuales
+// 7. Calcular el acumulado y % anual trayendo todos los meses del año desde Supabase
 async function cargarAcumuladoAnual() {
   const inputMes = document.getElementById('mesInasistencias');
   if (!inputMes || !inputMes.value) return;
@@ -2819,7 +2712,7 @@ async function cargarAcumuladoAnual() {
   poblarTablaSeguimiento(listaSeguimiento);
 }
 
-// 8. Renderizar apartado de seguimiento
+// 8. Renderizar el apartado inferior de seguimiento prioritario
 function poblarTablaSeguimiento(lista) {
   const tbodySeguimiento = document.querySelector('#tablaSeguimientoAlumnos tbody');
   if (!tbodySeguimiento) return;
@@ -2849,7 +2742,7 @@ function poblarTablaSeguimiento(lista) {
   });
 }
 
-// 9. Filtrar tabla principal por Año, Sección y Nombre
+// 9. Filtrar por Año, Sección y Nombre
 function filtrarTablaInasistencias() {
   const buscador = document.getElementById('inputBuscarInasistencia').value.toLowerCase().trim();
   const anio = document.getElementById('selectAnioInasistencias').value.toLowerCase().trim();
