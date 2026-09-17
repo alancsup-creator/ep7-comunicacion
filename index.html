@@ -585,7 +585,7 @@
           🚨 Estudiantes Prioritarios para Seguimiento Institucional
         </h3>
         <span style="font-size: 13px; color: #64748b;">
-          Criterio: &lt; 85% de asistencia o &ge; 12 inasistencias acumuladas
+          Criterio: Riesgo (70% - 79% asist.) | Alerta (&lt; 70% asist.)
         </span>
       </div>
 
@@ -2642,7 +2642,7 @@ async function cargarInasistenciasMensuales() {
   cargarAcumuladoAnual();
 }
 
-// 7. Recalcular la suma anual de todos los meses
+// 7. Recalcular la suma anual y clasificar según los nuevos rangos de asistencia
 async function cargarAcumuladoAnual() {
   const mes = mesInasistenciasActivo || document.getElementById('mesInasistencias').value.trim();
   if (!mes) return;
@@ -2696,22 +2696,27 @@ async function cargarAcumuladoAnual() {
     if (celdaAcumulado) celdaAcumulado.innerText = totalFaltasAnio;
     if (celdaPctAnual) celdaPctAnual.innerText = `${pctAsistenciaAnual}%`;
 
+    // CLASIFICACIÓN SEGÚN LOS NUEVOS CRITERIOS
     let estadoHTML = '';
     let estadoTexto = 'Regular';
 
-    if (pctAsistenciaAnual < 75 || totalFaltasAnio >= 20) {
+    if (pctAsistenciaAnual < 70) {
+      // Menos del 70% de asistencia
       estadoTexto = 'Alerta';
       estadoHTML = `<span style="background: #fef2f2; color: #dc2626; border: 1px solid #fca5a5; padding: 3px 8px; border-radius: 12px; font-size: 12px; font-weight: bold;">🚨 Alerta</span>`;
-    } else if (pctAsistenciaAnual < 85 || totalFaltasAnio >= 12) {
+    } else if (pctAsistenciaAnual >= 70 && pctAsistenciaAnual < 80) {
+      // Entre el 70% y el 79% de asistencia
       estadoTexto = 'Riesgo';
       estadoHTML = `<span style="background: #fffbe3; color: #b45309; border: 1px solid #fde68a; padding: 3px 8px; border-radius: 12px; font-size: 12px; font-weight: bold;">⚠️ Riesgo</span>`;
     } else {
+      // Entre el 80% y el 100% de asistencia
       estadoTexto = 'Regular';
       estadoHTML = `<span style="background: #dcfce7; color: #15803d; padding: 3px 8px; border-radius: 12px; font-size: 12px; font-weight: bold;">✅ Regular</span>`;
     }
 
     if (celdaEstado) celdaEstado.innerHTML = estadoHTML;
 
+    // Si está en situación de Riesgo o Alerta, se deriva al cuadro de seguimiento
     if (estadoTexto === 'Riesgo' || estadoTexto === 'Alerta') {
       listaSeguimiento.push({
         curso: curso,
@@ -2725,7 +2730,7 @@ async function cargarAcumuladoAnual() {
 
   poblarTablaSeguimiento(listaSeguimiento);
 }
-
+  
 // 8. Renderizar tabla de seguimiento prioritario
 function poblarTablaSeguimiento(lista) {
   const tbodySeguimiento = document.querySelector('#tablaSeguimientoAlumnos tbody');
