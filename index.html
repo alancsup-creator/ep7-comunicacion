@@ -462,7 +462,7 @@
 <section id="inasistencias" class="tab-content" style="display: none;">
   <h2>📅 Registro y Control Institucional de Asistencia</h2>
 
-<!-- Encabezado y Filtros Principales -->
+  <!-- Encabezado y Filtros Principales -->
   <div style="background: white; border-radius: 12px; padding: 16px; margin-bottom: 16px; box-shadow: 0 1px 3px rgba(0,0,0,0.1);">
     
     <div style="display: flex; gap: 12px; flex-wrap: wrap; align-items: flex-end; margin-bottom: 16px;">
@@ -495,7 +495,7 @@
       <!-- Filtro por Año -->
       <div style="flex: 1; min-width: 110px;">
         <label style="font-size: 12px; font-weight: bold; color: #475569;">Año:</label>
-        <select id="selectAnioInasistencias" onchange="filtrarTablaInasistencias(); cargarInasistenciasMensuales();" style="width: 100%; padding: 8px; font-size: 14px; border: 1px solid #cbd5e1; border-radius: 6px;">
+        <select id="selectAnioInasistencias" onchange="filtrarTablaInasistencias()" style="width: 100%; padding: 8px; font-size: 14px; border: 1px solid #cbd5e1; border-radius: 6px;">
           <option value="">Todos</option>
           <option value="1°">1° Año</option>
           <option value="2°">2° Año</option>
@@ -509,7 +509,7 @@
       <!-- Filtro por Sección -->
       <div style="flex: 1; min-width: 110px;">
         <label style="font-size: 12px; font-weight: bold; color: #475569;">Sección:</label>
-        <select id="selectSeccionInasistencias" onchange="filtrarTablaInasistencias(); cargarInasistenciasMensuales();" style="width: 100%; padding: 8px; font-size: 14px; border: 1px solid #cbd5e1; border-radius: 6px;">
+        <select id="selectSeccionInasistencias" onchange="filtrarTablaInasistencias()" style="width: 100%; padding: 8px; font-size: 14px; border: 1px solid #cbd5e1; border-radius: 6px;">
           <option value="">Todas</option>
           <option value="1ª">1ª Sección</option>
           <option value="2ª">2ª Sección</option>
@@ -517,7 +517,7 @@
           <option value="4ª">4ª Sección</option>
         </select>
       </div>
-      
+
       <!-- Buscador por Nombre -->
       <div style="flex: 2; min-width: 180px;">
         <label style="font-size: 12px; font-weight: bold; color: #475569;">Buscar Alumno:</label>
@@ -1238,6 +1238,7 @@
 
         <!-- Turno Mañana - 2° 1ª -->
         <tr><td>2° 1ª</td><td>BORDAGARAY, Benicio</td><td>Chavez, Antonela</td><td>11-1549156552</td></tr>
+        <tr><td>2° 1ª</td><td>BRUNO, Jazmín</td><td>Chavez, Antonela</td><td>2342-504767</td></tr>
         <tr><td>2° 1ª</td><td>CARRACCIO, Kayli</td><td>Chavez, Antonela</td><td>2342-530079</td></tr>
         <tr><td>2° 1ª</td><td>DOMECQ, Charo</td><td>Chavez, Antonela</td><td>2342-401124</td></tr>
         <tr><td>2° 1ª</td><td>FINAMORE, Emma</td><td>Chavez, Antonela</td><td>2342-451915</td></tr>
@@ -1260,6 +1261,7 @@
         <tr><td>2° 2ª</td><td>ARAGONÉS, Amber</td><td>Santillán, Gabriela</td><td>2342456520</td></tr>
         <tr><td>2° 2ª</td><td>ARRIETA, Amparo Belén</td><td>Santillán, Gabriela</td><td>2342512721</td></tr>
         <tr><td>2° 2ª</td><td>BLASCO, Irene</td><td>Santillán, Gabriela</td><td>2342465080</td></tr>
+        <tr><td>2° 2ª</td><td>BRUNO, Valentina</td><td>Santillán, Gabriela</td><td>2342504781 (WA) / 2342466917 (Llamadas)</td></tr>
         <tr><td>2° 2ª</td><td>CASARINI, Julia</td><td>Santillán, Gabriela</td><td>2342457400</td></tr>
         <tr><td>2° 2ª</td><td>CAVO, Mia</td><td>Santillán, Gabriela</td><td>2342454743</td></tr>
         <tr><td>2° 2ª</td><td>COSTA, Mariam</td><td>Santillán, Gabriela</td><td>2342567403</td></tr>
@@ -1271,7 +1273,6 @@
         <tr><td>2° 2ª</td><td>MORINI ZAPATA, Malena</td><td>Santillán, Gabriela</td><td>1159438190</td></tr>
         <tr><td>2° 2ª</td><td>MUJICA, Julián</td><td>Santillán, Gabriela</td><td>2342559304</td></tr>
         <tr><td>2° 2ª</td><td>PALÚ LOZANO, Máximo</td><td>Santillán, Gabriela</td><td>2342504924 (Padre) / 2342533616 (Madre)</td></tr>
-        <tr><td>2° 2ª</td><td>RODRIGUEZ, Lorenzo</td><td>Santillán, Gabriela</td><td>2342459546</td></tr>
         <tr><td>2° 2ª</td><td>PLANEL, Marialuz</td><td>Santillán, Gabriela</td><td>2342447311</td></tr>
         <tr><td>2° 2ª</td><td>SÁNCHEZ, Benjamín Federico</td><td>Santillán, Gabriela</td><td>2342556165</td></tr>
         <tr><td>2° 2ª</td><td>SAVALIO, Joaquina</td><td>Santillán, Gabriela</td><td>2342556774 (Madre) / 2342513466 (Padre)</td></tr>
@@ -2596,6 +2597,51 @@ async function guardarInasistencia(inputEl) {
 
 // 6. Cargar datos del mes activo desde Supabase
 async function cargarInasistenciasMensuales() {
+  const mes = mesInasistenciasActivo || document.getElementById('mesInasistencias').value.trim();
+  if (!mes) return;
+
+  console.log("🔍 Consultando registros de Supabase para el mes:", mes);
+
+  const { data, error } = await supabaseClient
+    .from('inasistencias_alumnos')
+    .select('*')
+    .eq('mes', mes);
+
+  if (error) {
+    console.error('❌ Error al recuperar registros:', error);
+    return;
+  }
+
+  console.log(`📊 Se encontraron ${data ? data.length : 0} registros en Supabase para ${mes}:`, data);
+
+  const mapaMensual = {};
+  if (data && data.length > 0) {
+    data.forEach(item => {
+      mapaMensual[item.alumno_id] = item;
+    });
+
+    if (data[0].dias_clase) {
+      document.getElementById('diasClaseMes').value = data[0].dias_clase;
+    }
+  }
+
+  // Volcar a las celdas de la tabla
+  document.querySelectorAll('#tablaInasistencias tbody tr').forEach(fila => {
+    const alumnoId = fila.getAttribute('data-alumno-id');
+    const inputFaltas = fila.querySelector('.input-faltas');
+
+    if (mapaMensual[alumnoId]) {
+      if (inputFaltas) inputFaltas.value = mapaMensual[alumnoId].faltas || 0;
+    } else {
+      if (inputFaltas) inputFaltas.value = 0;
+    }
+
+    recalcularFila(fila);
+  });
+
+  cargarAcumuladoAnual();
+}
+
 // 7. Recalcular la suma anual y clasificar según los nuevos rangos de asistencia
 async function cargarAcumuladoAnual() {
   const mes = mesInasistenciasActivo || document.getElementById('mesInasistencias').value.trim();
@@ -2741,7 +2787,7 @@ function filtrarTablaInasistencias() {
       }
     }
 
-   if (coincideNombre && coincideAnio && coincideSeccion) {
+    if (coincideNombre && coincideAnio && coincideSeccion) {
       fila.style.display = '';
     } else {
       fila.style.display = 'none';
@@ -2749,7 +2795,7 @@ function filtrarTablaInasistencias() {
   });
 }
 
-// Alternar sub-pestañas en Inasistencias
+  // Alternar sub-pestañas en Inasistencias
 function cambiarSubPestanaInasistencias(subTab) {
   const divPlanilla = document.getElementById('subTabPlanillaInasistencias');
   const divAlerta = document.getElementById('subTabAlertaInasistencias');
@@ -2777,22 +2823,32 @@ function cambiarSubPestanaInasistencias(subTab) {
 
 // Poblar tabla de seguimiento y actualizar badge numérico
 function poblarTablaSeguimiento(lista) {
-  const tbodySeguimiento = document.getElementById('tbodySeguimiento');
+  const tbodySeguimiento = document.querySelector('#tablaSeguimientoAlumnos tbody');
+  const badge = document.getElementById('badgeContadorAlerta');
+  
   if (!tbodySeguimiento) return;
 
-  tbodySeguimiento.innerHTML = '';
+  if (badge) {
+    if (lista.length > 0) {
+      badge.innerText = lista.length;
+      badge.style.display = 'inline-block';
+    } else {
+      badge.style.display = 'none';
+    }
+  }
 
   if (lista.length === 0) {
     tbodySeguimiento.innerHTML = `
       <tr>
-        <td colspan="5" style="text-align: center; color: #64748b; padding: 12px;">
-          🎉 No hay alumnos en situación de Riesgo o Alerta.
+        <td colspan="5" style="text-align: center; color: #64748b; padding: 20px;">
+          🎉 <strong>Sin situaciones críticas:</strong> No hay estudiantes en situación de riesgo o alerta en el período activo.
         </td>
       </tr>
     `;
     return;
   }
 
+  tbodySeguimiento.innerHTML = '';
   lista.forEach(item => {
     const tr = document.createElement('tr');
     tr.innerHTML = `
