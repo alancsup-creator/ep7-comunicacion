@@ -555,28 +555,46 @@
   </div>
 
   <!-- SUB-PESTAÑA 1: PLANILLA DE REGISTRO COMPLETO -->
-  <div id="subTabPlanillaInasistencias">
-    <div class="table-responsive" style="background: white; border-radius: 12px; padding: 12px; box-shadow: 0 1px 3px rgba(0,0,0,0.1);">
-      <table id="tablaInasistencias" class="control-table" style="width: 100%;">
-        <thead>
-          <tr>
-            <th>Curso / Sec.</th>
-            <th>Alumno</th>
-            <th style="width: 120px; text-align: center;">Inasistencias</th>
-            <th style="width: 100px; text-align: center;">Asist. Mes</th>
-            <th style="width: 130px; text-align: center;">% de inasistencia</th>
-            <th style="width: 120px; text-align: center; background-color: #fef3c7; color: #92400e; border-left: 2px solid #f59e0b; border-right: 1px solid #fde68a;">📊 Acum. Anual</th>
-            <th style="width: 100px; text-align: center; background-color: #fffbe3; color: #78350f;">% Anual</th>
-            <th style="width: 120px; text-align: center;">Estado</th>
-          </tr>
-        </thead>
-        <tbody>
-          <!-- Se genera dinámicamente -->
-        </tbody>
-      </table>
-    </div>
+ <div id="subTabPlanillaInasistencias">
+  
+  <!-- Control Global de Días de Clase del Mes (Sección) -->
+  <div style="margin-bottom: 12px; display: flex; align-items: center; gap: 10px; background: white; padding: 12px; border-radius: 12px; box-shadow: 0 1px 3px rgba(0,0,0,0.1);">
+    <label for="diasClaseMes" style="font-weight: 600; color: #1e293b; font-size: 0.9rem;">Días de clase del mes:</label>
+    <input 
+      type="number" 
+      id="diasClaseMes" 
+      value="18" 
+      min="1" 
+      max="31" 
+      inputmode="numeric"
+      style="width: 60px; text-align: center; font-weight: bold; padding: 4px 6px; border: 1px solid #cbd5e1; border-radius: 6px; font-size: 0.95rem;"
+      onchange="actualizarDiasMesTodos()"
+    >
   </div>
 
+  <!-- Tabla Adaptada -->
+  <div class="table-responsive" style="background: white; border-radius: 12px; padding: 12px; box-shadow: 0 1px 3px rgba(0,0,0,0.1);">
+    <table id="tablaInasistencias" class="control-table" style="width: 100%;">
+      <thead>
+        <tr>
+          <th>Curso / Sec.</th>
+          <th>Alumno</th>
+          <th style="width: 110px; text-align: center;">Asist. Mes</th>
+          <th style="width: 100px; text-align: center;">Faltas Mes</th>
+          <th style="width: 120px; text-align: center;">% Asistencia</th>
+          <th style="width: 120px; text-align: center; background-color: #fef3c7; color: #92400e; border-left: 2px solid #f59e0b; border-right: 1px solid #fde68a;">📊 Acum. Anual</th>
+          <th style="width: 100px; text-align: center; background-color: #fffbe3; color: #78350f;">% Anual</th>
+          <th style="width: 120px; text-align: center;">Estado</th>
+        </tr>
+      </thead>
+      <tbody id="tbodyInasistencias">
+        <!-- Se genera dinámicamente con JS -->
+      </tbody>
+    </table>
+  </div>
+
+</div>
+  
   <!-- SUB-PESTAÑA 2: CUADRO DE ALERTAS Y SEGUIMIENTO -->
   <div id="subTabAlertaInasistencias" style="display: none;">
     <div style="background: white; border-radius: 12px; padding: 16px; box-shadow: 0 1px 3px rgba(0,0,0,0.1);">
@@ -2500,7 +2518,7 @@ function poblarTablaInasistencias() {
 
     if (!alumno) return;
 
-    // Generar un ID unívoco que no dependa de índices temporales
+    // Generar un ID unívoco
     const alumnoId = fila.getAttribute('data-alumno-id') || 
                      fila.getAttribute('data-dni') || 
                      `al_${alumno.toLowerCase().replace(/[^a-z0-9]/g, '_')}`;
@@ -2511,26 +2529,40 @@ function poblarTablaInasistencias() {
     tr.innerHTML = `
       <td><strong>${curso}</strong></td>
       <td>${alumno}</td>
+      
+      <!-- 1. Campo editable: Asistencias Presentes en el Mes -->
       <td style="text-align: center;">
         <input 
           type="number" 
-          step="0.5" 
+          class="input-asistencias" 
+          value="18" 
           min="0" 
-          value="0" 
-          class="input-faltas" 
+          max="31" 
+          inputmode="numeric"
           onchange="guardarInasistencia(this)" 
-          style="width: 70px; text-align: center; padding: 5px; font-weight: bold; border: 1px solid #ccc; border-radius: 4px;"
+          oninput="recalcularFila(this.closest('tr'))"
+          style="width: 60px; text-align: center; font-weight: bold; border: 1px solid #cbd5e1; border-radius: 4px; padding: 4px;"
         >
       </td>
-      <td style="text-align: center;" class="asistencia-mes">0</td>
-      <td style="text-align: center; font-weight: bold;" class="porcentaje-mes">0%</td>
-      <td style="text-align: center; font-weight: bold; background-color: #fef3c7; color: #92400e; border-left: 2px solid #f59e0b; border-right: 1px solid #fde68a;" class="total-anual-acumulado">
+
+      <!-- 2. Faltas calculadas (Días Mes - Asistencias) -->
+      <td class="faltas-mes" style="text-align: center; font-weight: bold; color: #b91c1c;">0</td>
+
+      <!-- 3. % Asistencia del mes -->
+      <td class="porcentaje-mes" style="text-align: center; font-weight: bold;">100%</td>
+
+      <!-- 4. Acumulado Anual -->
+      <td class="total-anual-acumulado" style="text-align: center; font-weight: bold; background-color: #fef3c7; color: #92400e; border-left: 2px solid #f59e0b; border-right: 1px solid #fde68a;">
         0
       </td>
-      <td style="text-align: center; font-weight: bold; background-color: #fffbe3; color: #78350f;" class="porcentaje-anual">
+
+      <!-- 5. % Anual -->
+      <td class="porcentaje-anual" style="text-align: center; font-weight: bold; background-color: #fffbe3; color: #78350f;">
         100%
       </td>
-      <td style="text-align: center;" class="estado-asistencia">
+
+      <!-- 6. Estado -->
+      <td class="estado-asistencia" style="text-align: center;">
         <span style="background: #dcfce7; color: #15803d; padding: 3px 8px; border-radius: 12px; font-size: 12px; font-weight: bold;">Regular</span>
       </td>
     `;
@@ -2540,7 +2572,7 @@ function poblarTablaInasistencias() {
 
   cargarInasistenciasMensuales();
 }
-
+  
 // 4. Recalcular métricas de fila
 function recalcularFila(fila) {
   const inputFaltas = fila.querySelector('.input-faltas');
