@@ -462,7 +462,7 @@
 <section id="inasistencias" class="tab-content" style="display: none;">
   <h2>📅 Registro y Control Institucional de Asistencia</h2>
 
-  <!-- Encabezado y Filtros Principales -->
+<!-- Encabezado y Filtros Principales -->
   <div style="background: white; border-radius: 12px; padding: 16px; margin-bottom: 16px; box-shadow: 0 1px 3px rgba(0,0,0,0.1);">
     
     <div style="display: flex; gap: 12px; flex-wrap: wrap; align-items: flex-end; margin-bottom: 16px;">
@@ -2596,51 +2596,6 @@ async function guardarInasistencia(inputEl) {
 
 // 6. Cargar datos del mes activo desde Supabase
 async function cargarInasistenciasMensuales() {
-  const mes = mesInasistenciasActivo || document.getElementById('mesInasistencias').value.trim();
-  if (!mes) return;
-
-  console.log("🔍 Consultando registros de Supabase para el mes:", mes);
-
-  const { data, error } = await supabaseClient
-    .from('inasistencias_alumnos')
-    .select('*')
-    .eq('mes', mes);
-
-  if (error) {
-    console.error('❌ Error al recuperar registros:', error);
-    return;
-  }
-
-  console.log(`📊 Se encontraron ${data ? data.length : 0} registros en Supabase para ${mes}:`, data);
-
-  const mapaMensual = {};
-  if (data && data.length > 0) {
-    data.forEach(item => {
-      mapaMensual[item.alumno_id] = item;
-    });
-
-    if (data[0].dias_clase) {
-      document.getElementById('diasClaseMes').value = data[0].dias_clase;
-    }
-  }
-
-  // Volcar a las celdas de la tabla
-  document.querySelectorAll('#tablaInasistencias tbody tr').forEach(fila => {
-    const alumnoId = fila.getAttribute('data-alumno-id');
-    const inputFaltas = fila.querySelector('.input-faltas');
-
-    if (mapaMensual[alumnoId]) {
-      if (inputFaltas) inputFaltas.value = mapaMensual[alumnoId].faltas || 0;
-    } else {
-      if (inputFaltas) inputFaltas.value = 0;
-    }
-
-    recalcularFila(fila);
-  });
-
-  cargarAcumuladoAnual();
-}
-
 // 7. Recalcular la suma anual y clasificar según los nuevos rangos de asistencia
 async function cargarAcumuladoAnual() {
   const mes = mesInasistenciasActivo || document.getElementById('mesInasistencias').value.trim();
