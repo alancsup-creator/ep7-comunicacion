@@ -2777,32 +2777,22 @@ function cambiarSubPestanaInasistencias(subTab) {
 
 // Poblar tabla de seguimiento y actualizar badge numérico
 function poblarTablaSeguimiento(lista) {
-  const tbodySeguimiento = document.querySelector('#tablaSeguimientoAlumnos tbody');
-  const badge = document.getElementById('badgeContadorAlerta');
-  
+  const tbodySeguimiento = document.getElementById('tbodySeguimiento');
   if (!tbodySeguimiento) return;
 
-  if (badge) {
-    if (lista.length > 0) {
-      badge.innerText = lista.length;
-      badge.style.display = 'inline-block';
-    } else {
-      badge.style.display = 'none';
-    }
-  }
+  tbodySeguimiento.innerHTML = '';
 
   if (lista.length === 0) {
     tbodySeguimiento.innerHTML = `
       <tr>
-        <td colspan="5" style="text-align: center; color: #64748b; padding: 20px;">
-          🎉 <strong>Sin situaciones críticas:</strong> No hay estudiantes en situación de riesgo o alerta en el período activo.
+        <td colspan="5" style="text-align: center; color: #64748b; padding: 12px;">
+          🎉 No hay alumnos en situación de Riesgo o Alerta.
         </td>
       </tr>
     `;
     return;
   }
 
-  tbodySeguimiento.innerHTML = '';
   lista.forEach(item => {
     const tr = document.createElement('tr');
     tr.innerHTML = `
@@ -2819,4 +2809,3 @@ function poblarTablaSeguimiento(lista) {
 
 </body>
 </html>
-
