@@ -3195,7 +3195,7 @@ async function cambiarEstadoUsuario(idUsuario, nuevoEstado) {
   try {
     // Usar la variable con la que inicializaste el cliente de Supabase
     const { data, error } = await supabaseClient
-      .from('usuarios') // Nombre exacto de tu tabla en Supabase
+      .from('profiles') // Nombre exacto de tu tabla en Supabase
       .update({ estado: nuevoEstado })
       .eq('id', idUsuario);
 
