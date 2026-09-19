@@ -2479,15 +2479,13 @@ async function cambiarMesInasistencias() {
   const inputMes = document.getElementById('mesInasistencias');
   if (!inputMes || !inputMes.value) return;
 
-  // Actualizamos la variable de mes activo
   mesInasistenciasActivo = inputMes.value;
   console.log("📅 Cambiando al mes:", mesInasistenciasActivo);
 
-  // Consultar e inyectar datos del mes seleccionado
   await cargarInasistenciasMensuales();
 }
 
-// 3. Poblado de tabla cloning con IDs normalizados
+// 3. Poblado de tabla cloning con IDs normalizados y atributo de curso
 function poblarTablaInasistencias() {
   const tbodyInasistencias = document.querySelector('#tablaInasistencias tbody');
   const tbodyAlumnos = document.querySelector('#tablaAlumnos tbody');
@@ -2503,13 +2501,13 @@ function poblarTablaInasistencias() {
 
     if (!alumno) return;
 
-    // Generar un ID unívoco que no dependa de índices temporales
     const alumnoId = fila.getAttribute('data-alumno-id') || 
                      fila.getAttribute('data-dni') || 
                      `al_${alumno.toLowerCase().replace(/[^a-z0-9]/g, '_')}`;
 
     const tr = document.createElement('tr');
     tr.setAttribute('data-alumno-id', alumnoId);
+    tr.setAttribute('data-curso', curso); // Se añade el curso a la fila para individualizarlo
 
     tr.innerHTML = `
       <td><strong>${curso}</strong></td>
@@ -2544,12 +2542,15 @@ function poblarTablaInasistencias() {
   cargarInasistenciasMensuales();
 }
 
-// 4. Recalcular métricas de fila
+// 4. Recalcular métricas de fila utilizando días de clase individualizados por curso/fila
 function recalcularFila(fila) {
   const inputFaltas = fila.querySelector('.input-faltas');
   const celdaAsistencia = fila.querySelector('.asistencia-mes');
   const celdaPctInasistencia = fila.querySelector('.porcentaje-mes');
-  const diasClase = parseFloat(document.getElementById('diasClaseMes').value) || 20;
+
+  // Si existe un input de días hábiles por curso o genérico, se intenta leer; si no, por defecto 20
+  const inputDias = document.getElementById('diasClaseMes');
+  const diasClase = parseFloat(inputDias ? inputDias.value : 20) || 20;
 
   const faltas = parseFloat(inputFaltas.value) || 0;
   const asistencias = Math.max(0, diasClase - faltas);
@@ -2559,12 +2560,14 @@ function recalcularFila(fila) {
   if (celdaPctInasistencia) celdaPctInasistencia.innerText = `${pctInasistencia}%`;
 }
 
-// 5. Guardar inasistencia con mes garantizado
+// 5. Guardar inasistencia garantizando la individualización por curso y alumno
 async function guardarInasistencia(inputEl) {
   const fila = inputEl.closest('tr');
   const alumnoId = fila.getAttribute('data-alumno-id');
+  const curso = fila.getAttribute('data-curso') || (fila.children[0] ? fila.children[0].innerText.trim() : '');
   const mes = mesInasistenciasActivo || document.getElementById('mesInasistencias').value.trim();
-  const diasClase = parseInt(document.getElementById('diasClaseMes').value) || 20;
+  const inputDias = document.getElementById('diasClaseMes');
+  const diasClase = parseInt(inputDias ? inputDias.value : 20) || 20;
 
   if (!mes) {
     alert("Por favor, seleccioná un mes antes de registrar faltas.");
@@ -2576,6 +2579,7 @@ async function guardarInasistencia(inputEl) {
 
   const payload = {
     alumno_id: alumnoId,
+    curso: curso, // Guardamos el curso individualizado en la base de datos
     mes: mes,
     dias_clase: diasClase,
     faltas: faltasVal,
@@ -2622,13 +2626,9 @@ async function cargarInasistenciasMensuales() {
     data.forEach(item => {
       mapaMensual[item.alumno_id] = item;
     });
-
-    if (data[0].dias_clase) {
-      document.getElementById('diasClaseMes').value = data[0].dias_clase;
-    }
   }
 
-  // Volcar a las celdas de la tabla
+  // Volcar datos a las filas correspondientes de la tabla
   document.querySelectorAll('#tablaInasistencias tbody tr').forEach(fila => {
     const alumnoId = fila.getAttribute('data-alumno-id');
     const inputFaltas = fila.querySelector('.input-faltas');
@@ -2645,7 +2645,7 @@ async function cargarInasistenciasMensuales() {
   cargarAcumuladoAnual();
 }
 
-// 7. Recalcular la suma anual y clasificar según los nuevos rangos de asistencia
+// 7. Recalcular la suma anual considerando los días de clase específicos guardados para cada alumno
 async function cargarAcumuladoAnual() {
   const mes = mesInasistenciasActivo || document.getElementById('mesInasistencias').value.trim();
   if (!mes) return;
@@ -2654,7 +2654,7 @@ async function cargarAcumuladoAnual() {
 
   const { data, error } = await supabaseClient
     .from('inasistencias_alumnos')
-    .select('alumno_id, faltas, dias_clase')
+    .select('alumno_id, curso, faltas, dias_clase')
     .gte('mes', `${anio}-01`)
     .lte('mes', `${anio}-12`);
 
@@ -2671,6 +2671,7 @@ async function cargarAcumuladoAnual() {
       const faltas = parseFloat(rec.faltas) || 0;
       const dias = parseInt(rec.dias_clase) || 20;
 
+      // Sumamos de manera individualizada según la historia registrada de cada alumno
       acumuladosFaltas[rec.alumno_id] = (acumuladosFaltas[rec.alumno_id] || 0) + faltas;
       acumuladosDiasClase[rec.alumno_id] = (acumuladosDiasClase[rec.alumno_id] || 0) + dias;
     });
@@ -2680,7 +2681,7 @@ async function cargarAcumuladoAnual() {
 
   document.querySelectorAll('#tablaInasistencias tbody tr').forEach(fila => {
     const alumnoId = fila.getAttribute('data-alumno-id');
-    const curso = fila.children[0] ? fila.children[0].innerText.trim() : '';
+    const curso = fila.getAttribute('data-curso') || (fila.children[0] ? fila.children[0].innerText.trim() : '');
     const alumnoNombre = fila.children[1] ? fila.children[1].innerText.trim() : '';
 
     const celdaAcumulado = fila.querySelector('.total-anual-acumulado');
@@ -2688,8 +2689,11 @@ async function cargarAcumuladoAnual() {
     const celdaEstado = fila.querySelector('.estado-asistencia');
 
     const totalFaltasAnio = acumuladosFaltas[alumnoId] || 0;
-    const diasMesActivo = parseInt(document.getElementById('diasClaseMes').value) || 20;
-    const totalDiasEscolares = acumuladosDiasClase[alumnoId] || diasMesActivo;
+    const inputDias = document.getElementById('diasClaseMes');
+    const diasFallback = parseInt(inputDias ? inputDias.value : 20) || 20;
+
+    // Si no hay registros de días acumulados para este alumno, toma el valor por defecto
+    const totalDiasEscolares = acumuladosDiasClase[alumnoId] || diasFallback;
 
     const asistenciasAnio = Math.max(0, totalDiasEscolares - totalFaltasAnio);
     const pctAsistenciaAnual = totalDiasEscolares > 0 
@@ -2699,7 +2703,7 @@ async function cargarAcumuladoAnual() {
     if (celdaAcumulado) celdaAcumulado.innerText = totalFaltasAnio;
     if (celdaPctAnual) celdaPctAnual.innerText = `${pctAsistenciaAnual}%`;
 
-    // CLASIFICACIÓN SEGÚN LOS CRITERIOS
+    // CLASIFICACIÓN
     let estadoHTML = '';
     let estadoTexto = 'Regular';
 
@@ -2830,7 +2834,7 @@ function cambiarSubPestanaInasistencias(subTab) {
     btnPlanilla.style.color = '#64748b';
   }
 }
-
+  
 // Poblar tabla de seguimiento y actualizar badge numérico
 function poblarTablaSeguimiento(lista) {
   const tbodySeguimiento = document.querySelector('#tablaSeguimientoAlumnos tbody');
