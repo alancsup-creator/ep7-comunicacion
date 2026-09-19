@@ -495,7 +495,7 @@
 <!-- Desplegable para seleccionar Año -->
 <div style="flex: 1; min-width: 130px;">
   <label style="font-size: 12px; font-weight: bold; color: #475569;">Año:</label>
-  <select id="selectAnioInasistencias" onchange="filtrarTablaInasistencias()" style="width: 100%; padding: 8px; font-size: 14px; border: 1px solid #cbd5e1; border-radius: 6px; font-weight: 600;">
+  <select id="selectAnioInasistencias" onchange="alCambiarFiltroOCurso()" style="width: 100%; padding: 8px; font-size: 14px; border: 1px solid #cbd5e1; border-radius: 6px; font-weight: 600;">
     <option value="">Seleccionar Año...</option>
     <option value="1°" selected>1° Año</option>
     <option value="2°">2° Año</option>
@@ -509,7 +509,7 @@
 <!-- Desplegable para seleccionar División / Sección -->
 <div style="flex: 1; min-width: 130px;">
   <label style="font-size: 12px; font-weight: bold; color: #475569;">División / Sección:</label>
-  <select id="selectSeccionInasistencias" onchange="filtrarTablaInasistencias()" style="width: 100%; padding: 8px; font-size: 14px; border: 1px solid #cbd5e1; border-radius: 6px; font-weight: 600;">
+  <select id="selectSeccionInasistencias" onchange="alCambiarFiltroOCurso()" style="width: 100%; padding: 8px; font-size: 14px; border: 1px solid #cbd5e1; border-radius: 6px; font-weight: 600;">
     <option value="">Seleccionar División...</option>
     <option value="1ª" selected>1ª Sección (1°)</option>
     <option value="2ª">2ª Sección (2°)</option>
@@ -520,18 +520,17 @@
 
 <!-- Entrada de Días Hábiles por Mes para el curso seleccionado -->
 <div style="width: 160px;">
-  <label style="font-size: 12px; font-weight: bold; color: #1e3a8a;">Días Hábiles del Mes:</label>
+  <label style="font-size: 12px; font-weight: bold; color: #1e3a8a;">Días Hábiles del Curso:</label>
   <input 
     type="number" 
     id="diasClaseMes" 
     value="20" 
     min="1" 
     max="31" 
-    onchange="cargarAcumuladoAnual()" 
+    onchange="actualizarDiasHabilesDelCursoActual()" 
     style="width: 100%; padding: 8px; font-size: 14px; border: 2px solid #0284c7; border-radius: 6px; text-align: center; font-weight: bold; background-color: #f0f9ff;"
   >
 </div>
-
       </div>
 
       <!-- Navegación por Sub-pestañas -->
@@ -2452,8 +2451,11 @@ document.addEventListener('DOMContentLoaded', () => {
   cargarEstadosCalificaciones();
 });
 
-// Variable en memoria para congelar el mes que se está editando activamente
+// Variable en memoria para congelar el mes activo
 let mesInasistenciasActivo = '';
+
+// Diccionario en memoria para guardar días hábiles por curso: { "1° 1ª": 20, "2° 1ª": 18 }
+const diasHabilesPorCurso = {};
 
 // 1. Inicialización de la pestaña
 document.addEventListener('DOMContentLoaded', () => {
@@ -2474,18 +2476,61 @@ document.addEventListener('DOMContentLoaded', () => {
   }, 300);
 });
 
-// 2. Manejador explícito de cambio de mes
+// Obtener la clave del curso visible actualmente según las selecciones
+function obtenerCursoSeleccionado() {
+  const anio = document.getElementById('selectAnioInasistencias')?.value || '';
+  const seccion = document.getElementById('selectSeccionInasistencias')?.value || '';
+  return `${anio} ${seccion}`.trim();
+}
+
+// Evento al cambiar de Año o División en los desplegables
+function alCambiarFiltroOCurso() {
+  filtrarTablaInasistencias();
+  
+  const cursoClave = obtenerCursoSeleccionado();
+  const inputDias = document.getElementById('diasClaseMes');
+  
+  if (inputDias) {
+    // Carga los días configurados específicamente para este curso o pone 20 por defecto
+    inputDias.value = diasHabilesPorCurso[cursoClave] || 20;
+  }
+}
+
+// 2. Evento al modificar los días hábiles en el input
+function actualizarDiasHabilesDelCursoActual() {
+  const cursoClave = obtenerCursoSeleccionado();
+  const inputDias = document.getElementById('diasClaseMes');
+  const nuevosDias = parseInt(inputDias.value) || 20;
+
+  // Guardamos en el diccionario del curso actual
+  if (cursoClave) {
+    diasHabilesPorCurso[cursoClave] = nuevosDias;
+  }
+
+  // Actualizamos ÚNICAMENTE las filas que corresponden a este curso/división o las visibles
+  document.querySelectorAll('#tablaInasistencias tbody tr').forEach(fila => {
+    const cursoFila = fila.getAttribute('data-curso') || '';
+    
+    // Si no hay filtro o coincide con el curso activo, actualizamos sus días
+    if (!cursoClave || cursoFila.includes(cursoClave) || fila.style.display !== 'none') {
+      fila.setAttribute('data-dias-clase', nuevosDias);
+      recalcularFila(fila);
+    }
+  });
+
+  cargarAcumuladoAnual();
+}
+
+// 3. Manejador explícito de cambio de mes
 async function cambiarMesInasistencias() {
   const inputMes = document.getElementById('mesInasistencias');
   if (!inputMes || !inputMes.value) return;
 
   mesInasistenciasActivo = inputMes.value;
-  console.log("📅 Cambiando al mes:", mesInasistenciasActivo);
-
   await cargarInasistenciasMensuales();
 }
 
-// 3. Poblado de tabla cloning con IDs normalizados
+// 4. Poblado de tabla con días independientes
 function poblarTablaInasistencias() {
   const tbodyInasistencias = document.querySelector('#tablaInasistencias tbody');
   const tbodyAlumnos = document.querySelector('#tablaAlumnos tbody');
@@ -2508,6 +2553,7 @@ function poblarTablaInasistencias() {
     const tr = document.createElement('tr');
     tr.setAttribute('data-alumno-id', alumnoId);
     tr.setAttribute('data-curso', curso);
+    tr.setAttribute('data-dias-clase', diasHabilesPorCurso[curso] || 20);
 
     tr.innerHTML = `
       <td><strong>${curso}</strong></td>
@@ -2539,16 +2585,18 @@ function poblarTablaInasistencias() {
     tbodyInasistencias.appendChild(tr);
   });
 
+  alCambiarFiltroOCurso();
   cargarInasistenciasMensuales();
 }
 
-// 4. Recalcular métricas de fila
+// 5. Recalcular métricas tomando los días específicos asignados a la propia fila
 function recalcularFila(fila) {
   const inputFaltas = fila.querySelector('.input-faltas');
   const celdaAsistencia = fila.querySelector('.asistencia-mes');
   const celdaPctInasistencia = fila.querySelector('.porcentaje-mes');
-  const inputDias = document.getElementById('diasClaseMes');
-  const diasClase = parseFloat(inputDias ? inputDias.value : 20) || 20;
+
+  // Toma los días asignados a ESTA fila individualmente
+  const diasClase = parseFloat(fila.getAttribute('data-dias-clase')) || 20;
 
   const faltas = parseFloat(inputFaltas.value) || 0;
   const asistencias = Math.max(0, diasClase - faltas);
@@ -2558,13 +2606,12 @@ function recalcularFila(fila) {
   if (celdaPctInasistencia) celdaPctInasistencia.innerText = `${pctInasistencia}%`;
 }
 
-// 5. Guardar inasistencia (sin incluir 'curso' en la query de Supabase)
+// 6. Guardar inasistencia con días de clase específicos de la fila
 async function guardarInasistencia(inputEl) {
   const fila = inputEl.closest('tr');
   const alumnoId = fila.getAttribute('data-alumno-id');
   const mes = mesInasistenciasActivo || document.getElementById('mesInasistencias').value.trim();
-  const inputDias = document.getElementById('diasClaseMes');
-  const diasClase = parseInt(inputDias ? inputDias.value : 20) || 20;
+  const diasClase = parseInt(fila.getAttribute('data-dias-clase')) || 20;
 
   if (!mes) {
     alert("Por favor, seleccioná un mes antes de registrar faltas.");
@@ -2582,7 +2629,7 @@ async function guardarInasistencia(inputEl) {
     updated_at: new Date().toISOString()
   };
 
-  console.log("💾 Guardando payload en Supabase:", payload);
+  console.log("💾 Guardando payload individualizado en Supabase:", payload);
 
   const { data, error } = await supabaseClient
     .from('inasistencias_alumnos')
@@ -2591,19 +2638,17 @@ async function guardarInasistencia(inputEl) {
 
   if (error) {
     console.error('❌ Error al guardar en Supabase:', error);
-    alert("Error al guardar la inasistencia. Verificá si tenés definida la restricción UNIQUE para (alumno_id, mes) en Supabase.");
+    alert("Error al guardar la inasistencia. Revisá la consola.");
   } else {
     console.log("✅ Guardado exitoso en Supabase:", data);
     cargarAcumuladoAnual();
   }
 }
 
-// 6. Cargar datos del mes activo desde Supabase
+// 7. Cargar datos mensuales e individualizar días guardados por alumno/curso
 async function cargarInasistenciasMensuales() {
   const mes = mesInasistenciasActivo || document.getElementById('mesInasistencias').value.trim();
   if (!mes) return;
-
-  console.log("🔍 Consultando registros de Supabase para el mes:", mes);
 
   const { data, error } = await supabaseClient
     .from('inasistencias_alumnos')
@@ -2624,10 +2669,17 @@ async function cargarInasistenciasMensuales() {
 
   document.querySelectorAll('#tablaInasistencias tbody tr').forEach(fila => {
     const alumnoId = fila.getAttribute('data-alumno-id');
+    const cursoFila = fila.getAttribute('data-curso');
     const inputFaltas = fila.querySelector('.input-faltas');
 
     if (mapaMensual[alumnoId]) {
       if (inputFaltas) inputFaltas.value = mapaMensual[alumnoId].faltas || 0;
+      
+      // Si el alumno tiene días guardados en Supabase, los aplicamos a su curso y fila
+      if (mapaMensual[alumnoId].dias_clase) {
+        fila.setAttribute('data-dias-clase', mapaMensual[alumnoId].dias_clase);
+        diasHabilesPorCurso[cursoFila] = mapaMensual[alumnoId].dias_clase;
+      }
     } else {
       if (inputFaltas) inputFaltas.value = 0;
     }
@@ -2635,10 +2687,12 @@ async function cargarInasistenciasMensuales() {
     recalcularFila(fila);
   });
 
+  // Actualiza el input visual según el filtro de curso actual
+  alCambiarFiltroOCurso();
   cargarAcumuladoAnual();
 }
 
-// 7. Recalcular la suma anual (solo seleccionando columnas válidas)
+// 8. Recalcular la suma anual respetando los días guardados década alumno
 async function cargarAcumuladoAnual() {
   const mes = mesInasistenciasActivo || document.getElementById('mesInasistencias').value.trim();
   if (!mes) return;
@@ -2673,7 +2727,7 @@ async function cargarAcumuladoAnual() {
 
   document.querySelectorAll('#tablaInasistencias tbody tr').forEach(fila => {
     const alumnoId = fila.getAttribute('data-alumno-id');
-    const curso = fila.getAttribute('data-curso') || (fila.children[0] ? fila.children[0].innerText.trim() : '');
+    const curso = fila.getAttribute('data-curso') || '';
     const alumnoNombre = fila.children[1] ? fila.children[1].innerText.trim() : '';
 
     const celdaAcumulado = fila.querySelector('.total-anual-acumulado');
@@ -2681,9 +2735,8 @@ async function cargarAcumuladoAnual() {
     const celdaEstado = fila.querySelector('.estado-asistencia');
 
     const totalFaltasAnio = acumuladosFaltas[alumnoId] || 0;
-    const inputDias = document.getElementById('diasClaseMes');
-    const diasFallback = parseInt(inputDias ? inputDias.value : 20) || 20;
-    const totalDiasEscolares = acumuladosDiasClase[alumnoId] || diasFallback;
+    const diasFilaLocal = parseInt(fila.getAttribute('data-dias-clase')) || 20;
+    const totalDiasEscolares = acumuladosDiasClase[alumnoId] || diasFilaLocal;
 
     const asistenciasAnio = Math.max(0, totalDiasEscolares - totalFaltasAnio);
     const pctAsistenciaAnual = totalDiasEscolares > 0 
@@ -2723,7 +2776,7 @@ async function cargarAcumuladoAnual() {
   poblarTablaSeguimiento(listaSeguimiento);
 }
 
-// 8. Renderizar tabla de seguimiento prioritario y actualizar badge numérico
+// 9. Renderizar tabla de seguimiento prioritario
 function poblarTablaSeguimiento(lista) {
   const tbodySeguimiento = document.querySelector('#tablaSeguimientoAlumnos tbody');
   const badge = document.getElementById('badgeContadorAlerta');
@@ -2764,11 +2817,11 @@ function poblarTablaSeguimiento(lista) {
   });
 }
 
-// 9. Filtrado de tabla
+// 10. Filtrar tabla por buscador y desplegables
 function filtrarTablaInasistencias() {
-  const buscador = document.getElementById('inputBuscarInasistencia').value.toLowerCase().trim();
-  const anio = document.getElementById('selectAnioInasistencias').value.toLowerCase().trim();
-  const seccion = document.getElementById('selectSeccionInasistencias').value.toLowerCase().trim();
+  const buscador = document.getElementById('inputBuscarInasistencia')?.value.toLowerCase().trim() || '';
+  const anio = document.getElementById('selectAnioInasistencias')?.value.toLowerCase().trim() || '';
+  const seccion = document.getElementById('selectSeccionInasistencias')?.value.toLowerCase().trim() || '';
   const numSeccion = seccion.replace(/[^0-9]/g, '');
 
   const filas = document.querySelectorAll('#tablaInasistencias tbody tr');
@@ -2798,7 +2851,7 @@ function filtrarTablaInasistencias() {
   });
 }
 
-// 10. Alternar sub-pestañas en Inasistencias
+// 11. Alternar sub-pestañas
 function cambiarSubPestanaInasistencias(subTab) {
   const divPlanilla = document.getElementById('subTabPlanillaInasistencias');
   const divAlerta = document.getElementById('subTabAlertaInasistencias');
@@ -2822,8 +2875,7 @@ function cambiarSubPestanaInasistencias(subTab) {
     btnPlanilla.style.borderBottom = '3px solid transparent';
     btnPlanilla.style.color = '#64748b';
   }
-}
-  
+}  
 // Poblar tabla de seguimiento y actualizar badge numérico
 function poblarTablaSeguimiento(lista) {
   const tbodySeguimiento = document.querySelector('#tablaSeguimientoAlumnos tbody');
