@@ -194,7 +194,8 @@
     <li class="nav-item" onclick="switchTab('fechas')">📅 Fechas Importantes</li>
     <li class="nav-item" onclick="switchTab('alumnos')">👥 Alumnos y Teléfonos</li>
     <li class="nav-item" onclick="switchTab('salidasEducativas')">🚌 Salidas Educativas</li>
-    <li class="nav-item" id="adminTab" style="display:none; color: #fca5a5;" onclick="switchTab('adminPanel')">⚙️ Gestión de Accesos</li>
+    <li class="nav-item" onclick="switchTab('adminPanel')">⚙️ Usuarios (Admin)</li>
+    <li class="nav-item" onclick="switchTab('gestion-estudiantes')">🎓 ABM Estudiantes</li>
     <li class="nav-item" onclick="logout()" style="margin-top: auto; border-top: 1px solid rgba(255,255,255,0.1);">🚪 Cerrar Sesión</li>
   </ul>
 </nav>
@@ -1814,7 +1815,7 @@
   </div>
 </section>
 
-<!-- Pestaña de Administración -->
+<!-- 1. Pestaña de Panel de Administración (Solo usuarios y accesos) -->
 <section id="adminPanel" class="tab-content" style="display: none;">
   <h2>⚙️ Gestión de Accesos y Usuarios (Directivo)</h2>
   <p>Desde este panel podés aprobar o bloquear el acceso de los docentes a la plataforma.</p>
@@ -1845,19 +1846,16 @@
       </tbody>
     </table>
   </div>
-
-  <hr style="margin: 30px 0; border: 0; border-top: 1px solid #cbd5e1;">
-
-  <!-- Sección de Gestión de Alumnos dentro de Admin -->
-  <div id="modalGestionAlumnos" style="padding: 20px; background: #fff; border-radius: 8px; box-shadow: 0 4px 12px rgba(0,0,0,0.1);">
-    <h3>👥 Gestión y Modificación de Estudiantes</h3>
-    <!-- (Formulario y tabla de alumnos que ya tenías) -->
-  </div>
 </section>
+
+<!-- 2. Pestaña Independiente: Gestión de Estudiantes -->
+<section id="gestion-estudiantes" class="tab-content" style="display: none;">
+  <h2>👥 Gestión y Modificación de Estudiantes</h2>
+  <p>Panel para altas, bajas, promociones y edición de matrículas.</p>
   
-  <!-- Sección de Gestión de Alumnos dentro de Admin -->
-  <div id="modalGestionAlumnos" style="padding: 20px; background: #fff; border-radius: 8px; box-shadow: 0 4px 12px rgba(0,0,0,0.1); margin-top: 20px;">
-    <h3>👥 Gestión y Modificación de Estudiantes</h3>
+  <hr style="margin: 20px 0; border: 0; border-top: 1px solid #cbd5e1;">
+
+  <div style="padding: 20px; background: #fff; border-radius: 8px; box-shadow: 0 4px 12px rgba(0,0,0,0.1);">
     
     <!-- Formulario para Nueva Inscripción -->
     <fieldset style="border: 1px solid #cbd5e1; border-radius: 6px; padding: 15px; margin-bottom: 20px;">
@@ -1912,46 +1910,6 @@
     </table>
   </div>
 </section>
-
-  <!-- Script de filtrado combinado (Apellido, Año y Sección) -->
-<script>
-  function filtrarAlumnos() {
-    // Captura los valores de los 3 controles
-    const inputApellido = document.getElementById('inputBuscadorAlumnos').value.toLowerCase().trim();
-    const valAnio = document.getElementById('selectAnio').value.toLowerCase();
-    const valSeccion = document.getElementById('selectSeccion').value.toLowerCase();
-
-    const table = document.getElementById('tablaAlumnos');
-    const trs = table.getElementsByTagName('tr');
-
-    for (let i = 1; i < trs.length; i++) {
-      const tr = trs[i];
-      const tdCurso = tr.getElementsByTagName('td')[0];  // Columna 1: "Año / Sec." (ej: "1° 1ª")
-      const tdAlumno = tr.getElementsByTagName('td')[1]; // Columna 2: "Alumno" (ej: "ALIANO, Clara")
-
-      if (tdCurso && tdAlumno) {
-        const textoCurso = (tdCurso.textContent || tdCurso.innerText).toLowerCase();
-        const textoAlumno = tdAlumno.textContent || tdAlumno.innerText;
-        
-        // Extrae solo el apellido (parte antes de la coma)
-        const apellido = textoAlumno.split(',')[0].toLowerCase();
-
-        // Validaciones individuales
-        const coincideApellido = apellido.includes(inputApellido);
-        const coincideAnio = valAnio === "" || textoCurso.includes(valAnio);
-        const coincideSeccion = valSeccion === "" || textoCurso.includes(valSeccion);
-
-        // Muestra la fila si cumple los 3 criterios
-        if (coincideApellido && coincideAnio && coincideSeccion) {
-          tr.style.display = '';
-        } else {
-          tr.style.display = 'none';
-        }
-      }
-    }
-  }
-</script>
-  
 </main>
 
 <script>
@@ -3250,6 +3208,39 @@ async function cambiarEstadoUsuario(userId, nuevoEstado) {
     console.error(error);
   } else {
     cargarTablaUsuarios(); // Recargar la tabla
+  }
+}
+
+  function filtrarAlumnos() {
+  const inputBuscador = document.getElementById('inputBuscadorAlumnos')?.value.toLowerCase().trim() || '';
+  const valAnio = document.getElementById('selectAnioAlumnos')?.value.toLowerCase() || '';
+  const valSeccion = document.getElementById('selectSeccionAlumnos')?.value.toLowerCase() || '';
+
+  const tabla = document.getElementById('tablaAlumnos');
+  if (!tabla) return;
+  
+  const filas = tabla.getElementsByTagName('tr');
+
+  // Empieza en 1 para saltarse el encabezado (<thead>)
+  for (let i = 1; i < filas.length; i++) {
+    const fila = filas[i];
+    const tdCurso = fila.getElementsByTagName('td')[0];  // Columna 1: Año / Sección
+    const tdAlumno = fila.getElementsByTagName('td')[1]; // Columna 2: Nombre del Alumno
+
+    if (tdCurso && tdAlumno) {
+      const textoCurso = tdCurso.textContent.toLowerCase();
+      const textoAlumno = tdAlumno.textContent.toLowerCase();
+
+      const coincideBusqueda = !inputBuscador || textoAlumno.includes(inputBuscador);
+      const coincideAnio = !valAnio || textoCurso.includes(valAnio);
+      const coincideSeccion = !valSeccion || textoCurso.includes(valSeccion);
+
+      if (coincideBusqueda && coincideAnio && coincideSeccion) {
+        fila.style.display = '';
+      } else {
+        fila.style.display = 'none';
+      }
+    }
   }
 }
 </script>
