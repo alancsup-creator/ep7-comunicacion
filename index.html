@@ -1797,28 +1797,121 @@
     </table>
   </section>
 
-  <!-- Pestaña 7: Salidas Educativas -->
-  <section id="salidasEducativas" class="tab-content" style="display: none;">
-    <h2>🚌 Salidas Educativas</h2>
-    <div style="width: 100%; height: 80vh; margin-top: 1rem;">
-      <iframe 
-  src="https://docs.google.com/forms/d/e/1FAIpQLSdCiIJLpr39yjSkI2ZbBgEyhTG3ZS5dWTsgpOEIRrtokVd_pA/viewform?embedded=true" 
-  width="100%" 
-  height="100%" 
-  frameborder="0" 
-  marginheight="0" 
-  marginwidth="0"
-  style="border: none; border-radius: 8px;">
-  Cargando formulario…
-</iframe>
-    </div>
-  </section>
+<!-- Pestaña 7: Salidas Educativas -->
+<section id="salidasEducativas" class="tab-content" style="display: none;">
+  <h2>🚌 Salidas Educativas</h2>
+  <div style="width: 100%; height: 80vh; margin-top: 1rem;">
+    <iframe 
+      src="https://docs.google.com/forms/d/e/1FAIpQLSdCiIJLpr39yjSkI2ZbBgEyhTG3ZS5dWTsgpOEIRrtokVd_pA/viewform?embedded=true" 
+      width="100%" 
+      height="100%" 
+      frameborder="0" 
+      marginheight="0" 
+      marginwidth="0"
+      style="border: none; border-radius: 8px;">
+      Cargando formulario…
+    </iframe>
+  </div>
+</section>
+
+<!-- Pestaña de Administración -->
+<section id="adminPanel" class="tab-content" style="display: none;">
+  <h2>⚙️ Gestión de Accesos y Usuarios (Directivo)</h2>
+  <p>Desde este panel podés aprobar o bloquear el acceso de los docentes a la plataforma.</p>
   
-  <!-- Pestaña de Administración -->
-  <section id="adminPanel" class="tab-content">
-    <h2>⚙️ Gestión de Accesos (Directivo)</h2>
-    <p>Para conceder, denegar o modificar accesos de docentes, ingresá directamente a tu panel de control de <strong>Supabase</strong> sección <code>Authentication -> Users</code>.</p>
-  </section>
+  <hr style="margin: 20px 0; border: 0; border-top: 1px solid #cbd5e1;">
+
+  <!-- Tabla de Solicitudes y Usuarios -->
+  <div style="background: #fff; padding: 20px; border-radius: 8px; box-shadow: 0 4px 12px rgba(0,0,0,0.1);">
+    <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 15px;">
+      <h3 style="margin: 0;">📋 Usuarios y Solicitudes Pendientes</h3>
+      <button onclick="cargarTablaUsuarios()" style="background: #0284c7; color: white; border: none; padding: 6px 12px; border-radius: 4px; cursor: pointer;">
+        🔄 Actualizar Lista
+      </button>
+    </div>
+
+    <table id="tablaGestionUsuarios" style="width: 100%; border-collapse: collapse;">
+      <thead>
+        <tr style="background: #f1f5f9; text-align: left;">
+          <th style="padding: 10px;">Docente / Usuario</th>
+          <th style="padding: 10px;">Email</th>
+          <th style="padding: 10px;">Rol</th>
+          <th style="padding: 10px;">Estado</th>
+          <th style="padding: 10px; text-align: center;">Acciones</th>
+        </tr>
+      </thead>
+      <tbody>
+        <!-- Se puebla dinámicamente -->
+      </tbody>
+    </table>
+  </div>
+
+  <hr style="margin: 30px 0; border: 0; border-top: 1px solid #cbd5e1;">
+
+  <!-- Sección de Gestión de Alumnos dentro de Admin -->
+  <div id="modalGestionAlumnos" style="padding: 20px; background: #fff; border-radius: 8px; box-shadow: 0 4px 12px rgba(0,0,0,0.1);">
+    <h3>👥 Gestión y Modificación de Estudiantes</h3>
+    <!-- (Formulario y tabla de alumnos que ya tenías) -->
+  </div>
+</section>
+  
+  <!-- Sección de Gestión de Alumnos dentro de Admin -->
+  <div id="modalGestionAlumnos" style="padding: 20px; background: #fff; border-radius: 8px; box-shadow: 0 4px 12px rgba(0,0,0,0.1); margin-top: 20px;">
+    <h3>👥 Gestión y Modificación de Estudiantes</h3>
+    
+    <!-- Formulario para Nueva Inscripción -->
+    <fieldset style="border: 1px solid #cbd5e1; border-radius: 6px; padding: 15px; margin-bottom: 20px;">
+      <legend style="font-weight: bold; color: #1e3a8a;">➕ Agregar Nueva Inscripción</legend>
+      <div style="display: flex; gap: 10px; flex-wrap: wrap;">
+        <input type="text" id="nuevoNombre" placeholder="Nombre y Apellido" style="padding: 8px; flex: 2; min-width: 180px;">
+        <input type="text" id="nuevoTelefono" placeholder="Teléfono" style="padding: 8px; flex: 1; min-width: 120px;">
+        <select id="nuevoAnio" style="padding: 8px; flex: 1;">
+          <option value="1°">1° Año</option>
+          <option value="2°">2° Año</option>
+          <option value="3°">3° Año</option>
+          <option value="4°">4° Año</option>
+          <option value="5°">5° Año</option>
+          <option value="6°">6° Año</option>
+        </select>
+        <select id="nuevaSeccion" style="padding: 8px; flex: 1;">
+          <option value="1ª">1ª Sección</option>
+          <option value="2ª">2ª Sección</option>
+          <option value="3ª">3ª Sección</option>
+          <option value="4ª">4ª Sección</option>
+        </select>
+        <button onclick="agregarNuevoAlumno()" style="background: #16a34a; color: white; border: none; padding: 8px 15px; border-radius: 6px; cursor: pointer; font-weight: bold;">
+          Inscribir
+        </button>
+      </div>
+    </fieldset>
+
+    <!-- Acciones Masivas -->
+    <div style="display: flex; gap: 10px; margin-bottom: 15px; background: #f8fafc; padding: 10px; border-radius: 6px;">
+      <button onclick="promoverSeleccionados()" style="background: #2563eb; color: white; border: none; padding: 8px 12px; border-radius: 6px; cursor: pointer; font-weight: bold;">
+        ⬆️ Promover Seleccionados (+1 Año)
+      </button>
+      <button onclick="egresarSeleccionados()" style="background: #dc2626; color: white; border: none; padding: 8px 12px; border-radius: 6px; cursor: pointer; font-weight: bold;">
+        🎓 Egresar / Dar de Baja Seleccionados
+      </button>
+    </div>
+
+    <!-- Tabla de Alumnos -->
+    <table id="tablaGestionAlumnos" style="width: 100%; border-collapse: collapse;">
+      <thead>
+        <tr style="background: #f1f5f9; text-align: left;">
+          <th><input type="checkbox" id="checkTodosAlumnos" onchange="marcarTodosAlumnos(this)"></th>
+          <th>Estudiante</th>
+          <th>Curso Actual</th>
+          <th>Teléfono</th>
+          <th>Acciones / Mover</th>
+        </tr>
+      </thead>
+      <tbody>
+        <!-- Se puebla dinámicamente -->
+      </tbody>
+    </table>
+  </div>
+</section>
 
   <!-- Script de filtrado combinado (Apellido, Año y Sección) -->
 <script>
@@ -2880,6 +2973,7 @@ function cambiarSubPestanaInasistencias(subTab) {
     btnPlanilla.style.color = '#64748b';
   }
 }  
+
 // Poblar tabla de seguimiento y actualizar badge numérico
 function poblarTablaSeguimiento(lista) {
   const tbodySeguimiento = document.querySelector('#tablaSeguimientoAlumnos tbody');
@@ -2920,8 +3014,245 @@ function poblarTablaSeguimiento(lista) {
     tbodySeguimiento.appendChild(tr);
   });
 }
+
+// 1. AGREGAR NUEVA INSCRIPCIÓN
+async function agregarNuevoAlumno() {
+  const nombre = document.getElementById('nuevoNombre').value.trim();
+  const telefono = document.getElementById('nuevoTelefono').value.trim();
+  const anio = document.getElementById('nuevoAnio').value;
+  const seccion = document.getElementById('nuevaSeccion').value;
+  const curso = `${anio} ${seccion}`;
+
+  if (!nombre) {
+    alert("Por favor, ingresá el nombre y apellido del estudiante.");
+    return;
+  }
+
+  const alumnoId = `al_${nombre.toLowerCase().replace(/[^a-z0-9]/g, '_')}_${Date.now()}`;
+
+  const payload = {
+    id: alumnoId,
+    nombre_apellido: nombre,
+    telefono: telefono,
+    curso: curso,
+    estado: 'ACTIVO',
+    created_at: new Date().toISOString()
+  };
+
+  const { data, error } = await supabaseClient
+    .from('alumnos')
+    .insert([payload]);
+
+  if (error) {
+    console.error("Error al inscribir alumno:", error);
+    alert("No se pudo registrar la inscripción.");
+  } else {
+    alert("Estudiante inscripto correctamente.");
+    document.getElementById('nuevoNombre').value = '';
+    document.getElementById('nuevoTelefono').value = '';
+    cargarTablaGestionAlumnos();
+  }
+}
+
+// 2. PROMOVER ESTUDIANTES
+async function promoverSeleccionados() {
+  const checkboxes = document.querySelectorAll('.check-alumno-gestion:checked');
+  if (checkboxes.length === 0) {
+    alert("Seleccioná al menos un estudiante para promover.");
+    return;
+  }
+
+  if (!confirm(`¿Estás seguro de promover a ${checkboxes.length} estudiante(s) al siguiente año?`)) return;
+
+  for (const chk of checkboxes) {
+    const fila = chk.closest('tr');
+    const alumnoId = chk.value;
+    const cursoActual = fila.getAttribute('data-curso');
+
+    const numeros = cursoActual.match(/\d+/g);
+    if (numeros && numeros.length >= 2) {
+      const nuevoAnioNum = parseInt(numeros[0]) + 1;
+      
+      // Si pasa de 6°, borra de la DB por egreso
+      if (nuevoAnioNum > 6) {
+        await supabaseClient.from('alumnos').delete().eq('id', alumnoId);
+      } else {
+        const nuevoCurso = `${nuevoAnioNum}° ${numeros[1]}ª`;
+        await supabaseClient
+          .from('alumnos')
+          .update({ curso: nuevoCurso })
+          .eq('id', alumnoId);
+      }
+    }
+  }
+
+  alert("Promoción masiva completada.");
+  cargarTablaGestionAlumnos();
+}
+
+// 3. EGRESAR / BORRAR ESTUDIANTES
+async function egresarSeleccionados() {
+  const checkboxes = document.querySelectorAll('.check-alumno-gestion:checked');
+  if (checkboxes.length === 0) {
+    alert("Seleccioná al menos un estudiante.");
+    return;
+  }
+
+  if (!confirm("¿Deseás eliminar/egresar a los estudiantes seleccionados de la base de datos?")) return;
+
+  const ids = Array.from(checkboxes).map(chk => chk.value);
+
+  const { error } = await supabaseClient
+    .from('alumnos')
+    .delete()
+    .in('id', ids);
+
+  if (error) {
+    console.error("Error al egresar alumnos:", error);
+  } else {
+    alert("Estudiantes procesados/eliminados correctamente.");
+    cargarTablaGestionAlumnos();
+  }
+}
+
+// 4. MOVER DE DIVISIÓN
+async function moverAlumno(alumnoId, nuevoAnio, nuevaSeccion) {
+  const nuevoCurso = `${nuevoAnio} ${nuevaSeccion}`;
+
+  const { error } = await supabaseClient
+    .from('alumnos')
+    .update({ curso: nuevoCurso })
+    .eq('id', alumnoId);
+
+  if (error) {
+    alert("Error al mover al estudiante de división.");
+  } else {
+    cargarTablaGestionAlumnos();
+  }
+}
+
+// Cargar la tabla para el Panel Administrativo
+async function cargarTablaGestionAlumnos() {
+  const tbody = document.querySelector('#tablaGestionAlumnos tbody');
+  if (!tbody) return;
+
+  const { data: alumnos, error } = await supabaseClient
+    .from('alumnos')
+    .select('*')
+    .order('curso', { ascending: true })
+    .order('nombre_apellido', { ascending: true });
+
+  if (error) return;
+
+  tbody.innerHTML = '';
+  alumnos.forEach(al => {
+    const tr = document.createElement('tr');
+    tr.setAttribute('data-curso', al.curso);
+    tr.innerHTML = `
+      <td><input type="checkbox" class="check-alumno-gestion" value="${al.id}"></td>
+      <td><strong>${al.nombre_apellido}</strong></td>
+      <td>${al.curso}</td>
+      <td>${al.telefono || '-'}</td>
+      <td>
+        <button onclick="promptMoverAlumno('${al.id}', '${al.curso}')" style="background: #0284c7; color: white; border: none; padding: 4px 8px; border-radius: 4px; cursor: pointer; font-size: 12px;">
+          🔀 Mover Curso
+        </button>
+      </td>
+    `;
+    tbody.appendChild(tr);
+  });
+}
+
+function promptMoverAlumno(id, cursoActual) {
+  const nuevoCurso = prompt("Ingresá el nuevo curso y división (Ej: 1° 4ª):", cursoActual);
+  if (nuevoCurso && nuevoCurso !== cursoActual) {
+    const partes = nuevoCurso.split(' ');
+    moverAlumno(id, partes[0], partes[1] || '1ª');
+  }
+}
+
+function marcarTodosAlumnos(masterCheckbox) {
+  const checkboxes = document.querySelectorAll('.check-alumno-gestion');
+  checkboxes.forEach(chk => chk.checked = masterCheckbox.checked);
+}
+
+  // Cargar la lista de usuarios desde la tabla 'profiles'
+async function cargarTablaUsuarios() {
+  const tbody = document.querySelector('#tablaGestionUsuarios tbody');
+  if (!tbody) return;
+
+  tbody.innerHTML = '<tr><td colspan="5" style="text-align: center; padding: 15px;">Cargando usuarios...</td></tr>';
+
+  // Consultar perfiles en Supabase
+  const { data: perfiles, error } = await supabaseClient
+    .from('profiles')
+    .select('*')
+    .order('created_at', { ascending: false });
+
+  if (error) {
+    console.error("Error al cargar perfiles:", error);
+    tbody.innerHTML = '<tr><td colspan="5" style="text-align: center; color: red; padding: 15px;">Error al cargar la lista. Verify RLS policies.</td></tr>';
+    return;
+  }
+
+  if (!perfiles || perfiles.length === 0) {
+    tbody.innerHTML = '<tr><td colspan="5" style="text-align: center; color: #64748b; padding: 15px;">No hay registros de usuarios.</td></tr>';
+    return;
+  }
+
+  tbody.innerHTML = '';
+  perfiles.forEach(usr => {
+    const tr = document.createElement('tr');
+    tr.style.borderBottom = '1px solid #e2e8f0';
+
+    // Formatear Badge de Estado
+    let estadoBadge = '';
+    if (usr.estado === 'APROBADO' || usr.aprobado === true) {
+      estadoBadge = '<span style="background: #dcfce7; color: #15803d; padding: 3px 8px; border-radius: 12px; font-weight: bold; font-size: 12px;">✅ Activo</span>';
+    } else if (usr.estado === 'RECHAZADO') {
+      estadoBadge = '<span style="background: #fee2e2; color: #b91c1c; padding: 3px 8px; border-radius: 12px; font-weight: bold; font-size: 12px;">❌ Denegado</span>';
+    } else {
+      estadoBadge = '<span style="background: #fef3c7; color: #b45309; padding: 3px 8px; border-radius: 12px; font-weight: bold; font-size: 12px;">⏳ Pendiente</span>';
+    }
+
+    tr.innerHTML = `
+      <td style="padding: 10px;"><strong>${usr.nombre_apellido || usr.nombre || 'Sin nombre'}</strong></td>
+      <td style="padding: 10px;">${usr.email || '-'}</td>
+      <td style="padding: 10px;">${usr.rol || 'Docente'}</td>
+      <td style="padding: 10px;">${estadoBadge}</td>
+      <td style="padding: 10px; text-align: center;">
+        <button onclick="cambiarEstadoUsuario('${usr.id}', 'APROBADO')" style="background: #16a34a; color: white; border: none; padding: 4px 8px; border-radius: 4px; cursor: pointer; margin-right: 5px;">
+          Aprobar
+        </button>
+        <button onclick="cambiarEstadoUsuario('${usr.id}', 'RECHAZADO')" style="background: #dc2626; color: white; border: none; padding: 4px 8px; border-radius: 4px; cursor: pointer;">
+          Bloquear
+        </button>
+      </td>
+    `;
+    tbody.appendChild(tr);
+  });
+}
+
+// Cambiar estado de acceso (Aprobar / Bloquear)
+async function cambiarEstadoUsuario(userId, nuevoEstado) {
+  const esAprobado = nuevoEstado === 'APROBADO';
+
+  const { error } = await supabaseClient
+    .from('profiles')
+    .update({ 
+      estado: nuevoEstado,
+      aprobado: esAprobado 
+    })
+    .eq('id', userId);
+
+  if (error) {
+    alert("Error al actualizar el estado del usuario.");
+    console.error(error);
+  } else {
+    cargarTablaUsuarios(); // Recargar la tabla
+  }
+}
 </script>
 
 </body>
 </html>
-
