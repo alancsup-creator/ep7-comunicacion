@@ -2817,32 +2817,37 @@ function poblarTablaSeguimiento(lista) {
   });
 }
 
-// 10. Filtrar tabla por buscador y desplegables
+// 10. Filtrar tabla por buscador y desplegables (Corregido para coincidencias exactas)
 function filtrarTablaInasistencias() {
   const buscador = document.getElementById('inputBuscarInasistencia')?.value.toLowerCase().trim() || '';
-  const anio = document.getElementById('selectAnioInasistencias')?.value.toLowerCase().trim() || '';
-  const seccion = document.getElementById('selectSeccionInasistencias')?.value.toLowerCase().trim() || '';
-  const numSeccion = seccion.replace(/[^0-9]/g, '');
+  const anioFiltro = document.getElementById('selectAnioInasistencias')?.value.trim() || '';
+  const seccionFiltro = document.getElementById('selectSeccionInasistencias')?.value.trim() || '';
+
+  // Extraer solo los números seleccionados en los combos (ej: "2°" -> "2", "2ª" -> "2")
+  const numAnioFiltro = anioFiltro.replace(/[^0-9]/g, '');
+  const numSeccionFiltro = seccionFiltro.replace(/[^0-9]/g, '');
 
   const filas = document.querySelectorAll('#tablaInasistencias tbody tr');
 
   filas.forEach(fila => {
-    const cursoTd = fila.children[0] ? fila.children[0].innerText.toLowerCase() : '';
-    const alumnoTd = fila.children[1] ? fila.children[1].innerText.toLowerCase() : '';
+    const cursoTexto = fila.children[0] ? fila.children[0].innerText.trim() : '';
+    const alumnoTexto = fila.children[1] ? fila.children[1].innerText.toLowerCase() : '';
 
-    const coincideNombre = alumnoTd.includes(buscador);
-    const coincideAnio = !anio || cursoTd.includes(anio.replace(/[^0-9]/g, ''));
+    // Extraer todos los números del texto del curso de la fila (ej: "2° 2ª" -> ["2", "2"])
+    const numerosCurso = cursoTexto.match(/\d+/g) || [];
+    const anioFilaNum = numerosCurso[0] || '';
+    const seccionFilaNum = numerosCurso[1] || '';
 
-    let coincideSeccion = true;
-    if (seccion) {
-      const numerosEnCurso = cursoTd.match(/\d+/g);
-      if (numerosEnCurso && numerosEnCurso.length >= 2) {
-        coincideSeccion = (numerosEnCurso[1] === numSeccion);
-      } else {
-        coincideSeccion = cursoTd.includes(seccion) || (numSeccion && cursoTd.includes(numSeccion));
-      }
-    }
+    // Validar coincidencias
+    const coincideNombre = alumnoTexto.includes(buscador);
+    
+    // Coincidencia exacta de Año
+    const coincideAnio = !numAnioFiltro || anioFilaNum === numAnioFiltro;
 
+    // Coincidencia exacta de Sección/División
+    const coincideSeccion = !numSeccionFiltro || seccionFilaNum === numSeccionFiltro;
+
+    // Mostrar u ocultar fila según el resultado
     if (coincideNombre && coincideAnio && coincideSeccion) {
       fila.style.display = '';
     } else {
@@ -2850,7 +2855,6 @@ function filtrarTablaInasistencias() {
     }
   });
 }
-
 // 11. Alternar sub-pestañas
 function cambiarSubPestanaInasistencias(subTab) {
   const divPlanilla = document.getElementById('subTabPlanillaInasistencias');
