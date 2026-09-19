@@ -3191,24 +3191,30 @@ async function cargarTablaUsuarios() {
   });
 }
 
-async function cambiarEstadoUsuario(id, nuevoEstado) {
-  // Ajustá los nombres de tabla y columna según tu BD
-  const { data, error } = await supabase
-    .from('usuarios') 
-    .update({ estado: nuevoEstado })
-    .eq('id', id);
+async function cambiarEstadoUsuario(idUsuario, nuevoEstado) {
+  try {
+    // Usar la variable con la que inicializaste el cliente de Supabase
+    const { data, error } = await supabaseClient
+      .from('usuarios') // Nombre exacto de tu tabla en Supabase
+      .update({ estado: nuevoEstado })
+      .eq('id', idUsuario);
 
-  if (error) {
-    // Esto te va a mostrar en la consola el motivo exacto del Bad Request
-    console.error("Detalle del error 400:", error.message, error.details, error.hint);
-    alert("Error al actualizar: " + error.message);
-    return;
+    if (error) {
+      console.error("Error al actualizar estado:", error.message);
+      alert("No se pudo actualizar el estado: " + error.message);
+      return;
+    }
+
+    alert("Estado actualizado con éxito");
+    
+    // Recargar la tabla para reflejar el cambio
+    if (typeof cargarTablaUsuarios === 'function') {
+      cargarTablaUsuarios();
+    }
+  } catch (err) {
+    console.error("Error inesperado:", err);
   }
-
-  console.log("Estado actualizado con éxito:", data);
-  cargarTablaUsuarios(); // Recargar la lista
-}
-  
+}  
   function filtrarAlumnos() {
   const inputBuscador = document.getElementById('inputBuscadorAlumnos')?.value.toLowerCase().trim() || '';
   const valAnio = document.getElementById('selectAnioAlumnos')?.value.toLowerCase() || '';
