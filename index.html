@@ -2485,7 +2485,7 @@ async function cambiarMesInasistencias() {
   await cargarInasistenciasMensuales();
 }
 
-// 3. Poblado de tabla cloning con IDs normalizados y atributo de curso
+// 3. Poblado de tabla cloning con IDs normalizados
 function poblarTablaInasistencias() {
   const tbodyInasistencias = document.querySelector('#tablaInasistencias tbody');
   const tbodyAlumnos = document.querySelector('#tablaAlumnos tbody');
@@ -2507,7 +2507,7 @@ function poblarTablaInasistencias() {
 
     const tr = document.createElement('tr');
     tr.setAttribute('data-alumno-id', alumnoId);
-    tr.setAttribute('data-curso', curso); // Se añade el curso a la fila para individualizarlo
+    tr.setAttribute('data-curso', curso);
 
     tr.innerHTML = `
       <td><strong>${curso}</strong></td>
@@ -2542,13 +2542,11 @@ function poblarTablaInasistencias() {
   cargarInasistenciasMensuales();
 }
 
-// 4. Recalcular métricas de fila utilizando días de clase individualizados por curso/fila
+// 4. Recalcular métricas de fila
 function recalcularFila(fila) {
   const inputFaltas = fila.querySelector('.input-faltas');
   const celdaAsistencia = fila.querySelector('.asistencia-mes');
   const celdaPctInasistencia = fila.querySelector('.porcentaje-mes');
-
-  // Si existe un input de días hábiles por curso o genérico, se intenta leer; si no, por defecto 20
   const inputDias = document.getElementById('diasClaseMes');
   const diasClase = parseFloat(inputDias ? inputDias.value : 20) || 20;
 
@@ -2560,11 +2558,10 @@ function recalcularFila(fila) {
   if (celdaPctInasistencia) celdaPctInasistencia.innerText = `${pctInasistencia}%`;
 }
 
-// 5. Guardar inasistencia garantizando la individualización por curso y alumno
+// 5. Guardar inasistencia (sin incluir 'curso' en la query de Supabase)
 async function guardarInasistencia(inputEl) {
   const fila = inputEl.closest('tr');
   const alumnoId = fila.getAttribute('data-alumno-id');
-  const curso = fila.getAttribute('data-curso') || (fila.children[0] ? fila.children[0].innerText.trim() : '');
   const mes = mesInasistenciasActivo || document.getElementById('mesInasistencias').value.trim();
   const inputDias = document.getElementById('diasClaseMes');
   const diasClase = parseInt(inputDias ? inputDias.value : 20) || 20;
@@ -2579,7 +2576,6 @@ async function guardarInasistencia(inputEl) {
 
   const payload = {
     alumno_id: alumnoId,
-    curso: curso, // Guardamos el curso individualizado en la base de datos
     mes: mes,
     dias_clase: diasClase,
     faltas: faltasVal,
@@ -2595,7 +2591,7 @@ async function guardarInasistencia(inputEl) {
 
   if (error) {
     console.error('❌ Error al guardar en Supabase:', error);
-    alert("Error al guardar la inasistencia. Revisá la consola.");
+    alert("Error al guardar la inasistencia. Verificá si tenés definida la restricción UNIQUE para (alumno_id, mes) en Supabase.");
   } else {
     console.log("✅ Guardado exitoso en Supabase:", data);
     cargarAcumuladoAnual();
@@ -2619,8 +2615,6 @@ async function cargarInasistenciasMensuales() {
     return;
   }
 
-  console.log(`📊 Se encontraron ${data ? data.length : 0} registros en Supabase para ${mes}:`, data);
-
   const mapaMensual = {};
   if (data && data.length > 0) {
     data.forEach(item => {
@@ -2628,7 +2622,6 @@ async function cargarInasistenciasMensuales() {
     });
   }
 
-  // Volcar datos a las filas correspondientes de la tabla
   document.querySelectorAll('#tablaInasistencias tbody tr').forEach(fila => {
     const alumnoId = fila.getAttribute('data-alumno-id');
     const inputFaltas = fila.querySelector('.input-faltas');
@@ -2645,7 +2638,7 @@ async function cargarInasistenciasMensuales() {
   cargarAcumuladoAnual();
 }
 
-// 7. Recalcular la suma anual considerando los días de clase específicos guardados para cada alumno
+// 7. Recalcular la suma anual (solo seleccionando columnas válidas)
 async function cargarAcumuladoAnual() {
   const mes = mesInasistenciasActivo || document.getElementById('mesInasistencias').value.trim();
   if (!mes) return;
@@ -2654,7 +2647,7 @@ async function cargarAcumuladoAnual() {
 
   const { data, error } = await supabaseClient
     .from('inasistencias_alumnos')
-    .select('alumno_id, curso, faltas, dias_clase')
+    .select('alumno_id, faltas, dias_clase')
     .gte('mes', `${anio}-01`)
     .lte('mes', `${anio}-12`);
 
@@ -2671,7 +2664,6 @@ async function cargarAcumuladoAnual() {
       const faltas = parseFloat(rec.faltas) || 0;
       const dias = parseInt(rec.dias_clase) || 20;
 
-      // Sumamos de manera individualizada según la historia registrada de cada alumno
       acumuladosFaltas[rec.alumno_id] = (acumuladosFaltas[rec.alumno_id] || 0) + faltas;
       acumuladosDiasClase[rec.alumno_id] = (acumuladosDiasClase[rec.alumno_id] || 0) + dias;
     });
@@ -2691,8 +2683,6 @@ async function cargarAcumuladoAnual() {
     const totalFaltasAnio = acumuladosFaltas[alumnoId] || 0;
     const inputDias = document.getElementById('diasClaseMes');
     const diasFallback = parseInt(inputDias ? inputDias.value : 20) || 20;
-
-    // Si no hay registros de días acumulados para este alumno, toma el valor por defecto
     const totalDiasEscolares = acumuladosDiasClase[alumnoId] || diasFallback;
 
     const asistenciasAnio = Math.max(0, totalDiasEscolares - totalFaltasAnio);
@@ -2703,7 +2693,6 @@ async function cargarAcumuladoAnual() {
     if (celdaAcumulado) celdaAcumulado.innerText = totalFaltasAnio;
     if (celdaPctAnual) celdaPctAnual.innerText = `${pctAsistenciaAnual}%`;
 
-    // CLASIFICACIÓN
     let estadoHTML = '';
     let estadoTexto = 'Regular';
 
