@@ -3191,26 +3191,24 @@ async function cargarTablaUsuarios() {
   });
 }
 
-// Cambiar estado de acceso (Aprobar / Bloquear)
-async function cambiarEstadoUsuario(userId, nuevoEstado) {
-  const esAprobado = nuevoEstado === 'APROBADO';
-
-  const { error } = await supabaseClient
-    .from('profiles')
-    .update({ 
-      estado: nuevoEstado,
-      aprobado: esAprobado 
-    })
-    .eq('id', userId);
+async function cambiarEstadoUsuario(id, nuevoEstado) {
+  // Ajustá los nombres de tabla y columna según tu BD
+  const { data, error } = await supabase
+    .from('usuarios') 
+    .update({ estado: nuevoEstado })
+    .eq('id', id);
 
   if (error) {
-    alert("Error al actualizar el estado del usuario.");
-    console.error(error);
-  } else {
-    cargarTablaUsuarios(); // Recargar la tabla
+    // Esto te va a mostrar en la consola el motivo exacto del Bad Request
+    console.error("Detalle del error 400:", error.message, error.details, error.hint);
+    alert("Error al actualizar: " + error.message);
+    return;
   }
-}
 
+  console.log("Estado actualizado con éxito:", data);
+  cargarTablaUsuarios(); // Recargar la lista
+}
+  
   function filtrarAlumnos() {
   const inputBuscador = document.getElementById('inputBuscadorAlumnos')?.value.toLowerCase().trim() || '';
   const valAnio = document.getElementById('selectAnioAlumnos')?.value.toLowerCase() || '';
