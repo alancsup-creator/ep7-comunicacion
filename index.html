@@ -2660,7 +2660,7 @@ async function cargarAlumnosDesdeSupabase() {
     // Consulta a la tabla 'alumnos'
     const { data, error } = await cliente
       .from('alumnos')
-      .select('id, nombre_apellido, telefono, curso_division')
+      .select('id, nombre_apellido, teléfono, curso_division')
       .order('curso_division', { ascending: true })
       .order('nombre_apellido', { ascending: true });
 
@@ -2691,7 +2691,7 @@ function renderizarTablaAlumnos(alumnos) {
     <tr>
       <td>${alumno.curso_division || '-'}</td>
       <td>${alumno.nombre_apellido || '-'}</td>
-      <td>${alumno.telefono || '-'}</td>
+      <td>${alumno.teléfono || '-'}</td>
     </tr>
   `).join('');
 }
