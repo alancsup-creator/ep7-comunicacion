@@ -2581,50 +2581,9 @@ function cambiarSubPestanaInasistencias(subTab) {
       btnPlanilla.style.color = '#64748b';
     }
   }
-} 
-  
-// Poblar tabla de seguimiento y actualizar badge numérico
-function poblarTablaSeguimiento(lista) {
-  const tbodySeguimiento = document.querySelector('#tablaSeguimientoAlumnos tbody');
-  const badge = document.getElementById('badgeContadorAlerta');
-  
-  if (!tbodySeguimiento) return;
-
-  if (badge) {
-    if (lista.length > 0) {
-      badge.innerText = lista.length;
-      badge.style.display = 'inline-block';
-    } else {
-      badge.style.display = 'none';
-    }
-  }
-
-  if (lista.length === 0) {
-    tbodySeguimiento.innerHTML = `
-      <tr>
-        <td colspan="5" style="text-align: center; color: #64748b; padding: 20px;">
-          🎉 <strong>Sin situaciones críticas:</strong> No hay estudiantes en situación de riesgo o alerta en el período activo.
-        </td>
-      </tr>
-    `;
-    return;
-  }
-
-  tbodySeguimiento.innerHTML = '';
-  lista.forEach(item => {
-    const tr = document.createElement('tr');
-    tr.innerHTML = `
-      <td><strong>${item.curso}</strong></td>
-      <td>${item.alumno}</td>
-      <td style="text-align: center; font-weight: bold; color: #b91c1c;">${item.faltas}</td>
-      <td style="text-align: center; font-weight: bold;">${item.pct}%</td>
-      <td style="text-align: center;">${item.estadoHTML}</td>
-    `;
-    tbodySeguimiento.appendChild(tr);
-  });
 }
 
-// 1. AGREGAR NUEVA INSCRIPCIÓN
+// 12. AGREGAR NUEVA INSCRIPCIÓN (Corregida la variable teléfono -> telefono)
 async function agregarNuevoAlumno() {
   const nombre = document.getElementById('nuevoNombre')?.value.trim();
   const telefono = document.getElementById('nuevoTelefono')?.value.trim();
@@ -2636,7 +2595,6 @@ async function agregarNuevoAlumno() {
     return;
   }
 
-  // Formatear el curso igual a los registros de la base (ej: "1° 1ª")
   const cursoFormateado = `${anio} ${seccion}`;
 
   try {
@@ -2647,8 +2605,8 @@ async function agregarNuevoAlumno() {
       .insert([
         { 
           nombre_apellido: nombre.toUpperCase(), 
-          telefono: teléfono || null, 
-          curso_division: cursoFormateado, // <-- CAMBIO AQUÍ: 'curso_division' en lugar de 'curso'
+          teléfono: telefono || null, // <-- CON TILDE EN LA CLAVE DE SUPABASE, SIN TILDE EN LA VARIABLE
+          curso_division: cursoFormateado,
           estado: 'activo' 
         }
       ]);
@@ -2661,11 +2619,9 @@ async function agregarNuevoAlumno() {
 
     alert("¡Estudiante inscripto con éxito en Supabase!");
 
-    // Limpiar el formulario
     document.getElementById('nuevoNombre').value = '';
     if (document.getElementById('nuevoTelefono')) document.getElementById('nuevoTelefono').value = '';
 
-    // Recargar la tabla si la función existe
     if (typeof cargarAlumnosDesdeSupabase === 'function') {
       cargarAlumnosDesdeSupabase();
     }
@@ -2674,7 +2630,7 @@ async function agregarNuevoAlumno() {
     console.error("Error inesperado:", err);
   }
 }
-// 2. PROMOVER ESTUDIANTES
+  // 2. PROMOVER ESTUDIANTES
 async function promoverSeleccionados() {
   const checkboxes = document.querySelectorAll('.check-alumno-gestion:checked');
   if (checkboxes.length === 0) {
