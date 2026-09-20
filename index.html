@@ -2375,43 +2375,54 @@ function poblarTablaSeguimiento(lista) {
 
 // 1. AGREGAR NUEVA INSCRIPCIÓN
 async function agregarNuevoAlumno() {
-  const nombre = document.getElementById('nuevoNombre').value.trim();
-  const telefono = document.getElementById('nuevoTelefono').value.trim();
-  const anio = document.getElementById('nuevoAnio').value;
-  const seccion = document.getElementById('nuevaSeccion').value;
-  const curso = `${anio} ${seccion}`;
+  const nombre = document.getElementById('nuevoNombre')?.value.trim();
+  const telefono = document.getElementById('nuevoTelefono')?.value.trim();
+  const anio = document.getElementById('nuevoAnio')?.value;
+  const seccion = document.getElementById('nuevaSeccion')?.value;
 
   if (!nombre) {
     alert("Por favor, ingresá el nombre y apellido del estudiante.");
     return;
   }
 
-  const alumnoId = `al_${nombre.toLowerCase().replace(/[^a-z0-9]/g, '_')}_${Date.now()}`;
+  // Formatear el curso igual a los registros de la base (ej: "1° 1ª")
+  const cursoFormateado = `${anio} ${seccion}`;
 
-  const payload = {
-    id: alumnoId,
-    nombre_apellido: nombre,
-    telefono: telefono,
-    curso: curso,
-    estado: 'ACTIVO',
-    created_at: new Date().toISOString()
-  };
+  try {
+    const cliente = typeof supabaseClient !== 'undefined' ? supabaseClient : supabase;
 
-  const { data, error } = await supabaseClient
-    .from('alumnos')
-    .insert([payload]);
+    const { data, error } = await cliente
+      .from('alumnos')
+      .insert([
+        { 
+          nombre_apellido: nombre.toUpperCase(), 
+          telefono: telefono || null, 
+          curso_division: cursoFormateado, // <-- CAMBIO AQUÍ: 'curso_division' en lugar de 'curso'
+          estado: 'activo' 
+        }
+      ]);
 
-  if (error) {
-    console.error("Error al inscribir alumno:", error);
-    alert("No se pudo registrar la inscripción.");
-  } else {
-    alert("Estudiante inscripto correctamente.");
+    if (error) {
+      console.error("Error al inscribir alumno:", error);
+      alert("No se pudo inscribir al alumno: " + error.message);
+      return;
+    }
+
+    alert("¡Estudiante inscripto con éxito en Supabase!");
+
+    // Limpiar el formulario
     document.getElementById('nuevoNombre').value = '';
-    document.getElementById('nuevoTelefono').value = '';
-    cargarTablaGestionAlumnos();
+    if (document.getElementById('nuevoTelefono')) document.getElementById('nuevoTelefono').value = '';
+
+    // Recargar la tabla si la función existe
+    if (typeof cargarAlumnosDesdeSupabase === 'function') {
+      cargarAlumnosDesdeSupabase();
+    }
+
+  } catch (err) {
+    console.error("Error inesperado:", err);
   }
 }
-
 // 2. PROMOVER ESTUDIANTES
 async function promoverSeleccionados() {
   const checkboxes = document.querySelectorAll('.check-alumno-gestion:checked');
