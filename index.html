@@ -2928,7 +2928,7 @@ function poblarTablaInasistencias() {
 
     if (!nombreAlumno) return;
 
-    // Genera el ID compatible con las inasistencias previas
+    // Clave de texto para enlazar con las inasistencias en Supabase
     const alumnoId = `al_${nombreAlumno.toLowerCase().replace(/[^a-z0-9]/g, '_')}`;
 
     const tr = document.createElement('tr');
@@ -3232,7 +3232,7 @@ function filtrarTablaInasistencias() {
   });
 }
 
-// INICIALIZACIÓN
+// INICIALIZACIÓN DE LA APLICACIÓN
 document.addEventListener('DOMContentLoaded', () => {
   const inputMes = document.getElementById('mesInasistencias');
   if (inputMes && !inputMes.value) {
@@ -3246,12 +3246,11 @@ document.addEventListener('DOMContentLoaded', () => {
     mesInasistenciasActivo = inputMes.value;
   }
 
-  // Carga de alumnos desde Supabase
+  // Carga inicial de datos desde Supabase
   if (typeof cargarAlumnosDesdeSupabase === 'function') {
     cargarAlumnosDesdeSupabase();
   }
 });
-
 </script>
 </body>
 </html>
