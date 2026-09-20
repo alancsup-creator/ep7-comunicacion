@@ -2583,7 +2583,7 @@ function cambiarSubPestanaInasistencias(subTab) {
   }
 }
 
-// 1. AGREGAR NUEVA INSCRIPCIÓN
+// 12. GESTIÓN DE ALUMNO Y USUARIOS
 async function agregarNuevoAlumno() {
   const nombre = document.getElementById('nuevoNombre')?.value.trim();
   const telefono = document.getElementById('nuevoTelefono')?.value.trim();
@@ -2631,7 +2631,6 @@ async function agregarNuevoAlumno() {
   }
 }
 
-// 2. PROMOVER ESTUDIANTES
 async function promoverSeleccionados() {
   const checkboxes = document.querySelectorAll('.check-alumno-gestion:checked');
   if (checkboxes.length === 0) {
@@ -2666,7 +2665,6 @@ async function promoverSeleccionados() {
   cargarTablaGestionAlumnos();
 }
 
-// 3. EGRESAR / BORRAR ESTUDIANTES
 async function egresarSeleccionados() {
   const checkboxes = document.querySelectorAll('.check-alumno-gestion:checked');
   if (checkboxes.length === 0) {
@@ -2691,7 +2689,6 @@ async function egresarSeleccionados() {
   }
 }
 
-// 4. MOVER DE DIVISIÓN
 async function moverAlumno(alumnoId, nuevoAnio, nuevaSeccion) {
   const nuevoCurso = `${nuevoAnio} ${nuevaSeccion}`;
 
