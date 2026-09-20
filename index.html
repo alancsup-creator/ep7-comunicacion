@@ -1984,22 +1984,25 @@ async function cambiarMesInasistencias() {
 // 4. Poblado de tabla con días independientes
 function poblarTablaInasistencias() {
   const tbodyInasistencias = document.querySelector('#tablaInasistencias tbody');
-  const tbodyAlumnos = document.querySelector('#tablaAlumnos tbody');
-
-  if (!tbodyInasistencias || !tbodyAlumnos) return;
+  if (!tbodyInasistencias) return;
 
   tbodyInasistencias.innerHTML = '';
-  const filasAlumnos = tbodyAlumnos.querySelectorAll('tr');
 
-  filasAlumnos.forEach((fila) => {
-    const curso = fila.children[0] ? fila.children[0].innerText.trim() : '';
-    const alumno = fila.children[1] ? fila.children[1].innerText.trim() : '';
+  if (!listaAlumnosGlobal || listaAlumnosGlobal.length === 0) {
+    tbodyInasistencias.innerHTML = '<tr><td colspan="8" style="text-align:center;">Cargando lista de estudiantes...</td></tr>';
+    setTimeout(poblarTablaInasistencias, 500);
+    return;
+  }
 
-    if (!alumno) return;
+  listaAlumnosGlobal.forEach((alumno) => {
+    const curso = alumno.curso_division || '';
+    const nombreAlumno = alumno.nombre_apellido || '';
 
-    const alumnoId = fila.getAttribute('data-alumno-id') || 
-                     fila.getAttribute('data-dni') || 
-                     `al_${alumno.toLowerCase().replace(/[^a-z0-9]/g, '_')}`;
+    if (!nombreAlumno) return;
+
+    // GENERAR LA CLAVE DE TEXTO EXACTAMENTE IGUAL A COMO ESTÁ EN SUPABASE
+    // Ejemplo: "ALIANO PINTOS, Álvaro Iván" -> "al_aliano_pintos__lvaro_iv_n"
+    const alumnoId = `al_${nombreAlumno.toLowerCase().replace(/[^a-z0-9]/g, '_')}`;
 
     const tr = document.createElement('tr');
     tr.setAttribute('data-alumno-id', alumnoId);
@@ -2008,7 +2011,7 @@ function poblarTablaInasistencias() {
 
     tr.innerHTML = `
       <td><strong>${curso}</strong></td>
-      <td>${alumno}</td>
+      <td>${nombreAlumno}</td>
       <td style="text-align: center;">
         <input 
           type="number" 
@@ -2039,6 +2042,7 @@ function poblarTablaInasistencias() {
   alCambiarFiltroOCurso();
   cargarInasistenciasMensuales();
 }
+
 
 // 5. Recalcular métricas tomando los días específicos asignados a la propia fila
 function recalcularFila(fila) {
