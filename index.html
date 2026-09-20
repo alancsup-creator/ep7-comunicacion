@@ -3232,7 +3232,7 @@ function filtrarTablaInasistencias() {
   });
 }
 
-// INICIALIZACIÓN DE LA APLICACIÓN
+// INICIALIZACIÓN
 document.addEventListener('DOMContentLoaded', () => {
   const inputMes = document.getElementById('mesInasistencias');
   if (inputMes && !inputMes.value) {
@@ -3246,7 +3246,6 @@ document.addEventListener('DOMContentLoaded', () => {
     mesInasistenciasActivo = inputMes.value;
   }
 
-  // Carga inicial de datos desde Supabase
   if (typeof cargarAlumnosDesdeSupabase === 'function') {
     cargarAlumnosDesdeSupabase();
   }
