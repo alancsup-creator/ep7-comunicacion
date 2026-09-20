@@ -3286,14 +3286,16 @@ document.addEventListener('DOMContentLoaded', () => {
     inputMes.value = `${yyyy}-${mm}`;
   }
 
-  if (inputMes) {
+  if (inputMes && typeof mesInasistenciasActivo !== 'undefined') {
     mesInasistenciasActivo = inputMes.value;
   }
 
   // Carga de alumnos desde Supabase
-  cargarAlumnosDesdeSupabase();
+  if (typeof cargarAlumnosDesdeSupabase === 'function') {
+    cargarAlumnosDesdeSupabase();
+  }
 });
-</script>
+  </script>
 
 </body>
 </html>
