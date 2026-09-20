@@ -2626,9 +2626,7 @@ async function cambiarEstadoUsuario(idUsuario, nuevoEstado) {
     console.error("Error inesperado:", err);
   }
 }  
-  // Variable global para almacenar los alumnos traídos de la base de datos
-let listaAlumnosGlobal = [];
-
+  
 function filtrarAlumnos() {
   const buscador = document.getElementById('inputBuscadorAlumnos')?.value.toLowerCase().trim() || '';
   const valAnio = document.getElementById('selectAnioAlumnos')?.value.toLowerCase() || '';
