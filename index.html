@@ -2557,24 +2557,32 @@ function cambiarSubPestanaInasistencias(subTab) {
   const btnAlerta = document.getElementById('btnSubTabAlerta');
 
   if (subTab === 'planilla') {
-    divPlanilla.style.display = 'block';
-    divAlerta.style.display = 'none';
+    if (divPlanilla) divPlanilla.style.display = 'block';
+    if (divAlerta) divAlerta.style.display = 'none';
 
-    btnPlanilla.style.borderBottom = '3px solid #2563eb';
-    btnPlanilla.style.color = '#2563eb';
-    btnAlerta.style.borderBottom = '3px solid transparent';
-    btnAlerta.style.color = '#64748b';
+    if (btnPlanilla) {
+      btnPlanilla.style.borderBottom = '3px solid #2563eb';
+      btnPlanilla.style.color = '#2563eb';
+    }
+    if (btnAlerta) {
+      btnAlerta.style.borderBottom = '3px solid transparent';
+      btnAlerta.style.color = '#64748b';
+    }
   } else {
-    divPlanilla.style.display = 'none';
-    divAlerta.style.display = 'block';
+    if (divPlanilla) divPlanilla.style.display = 'none';
+    if (divAlerta) divAlerta.style.display = 'block';
 
-    btnAlerta.style.borderBottom = '3px solid #dc2626';
-    btnAlerta.style.color = '#dc2626';
-    btnPlanilla.style.borderBottom = '3px solid transparent';
-    btnPlanilla.style.color = '#64748b';
+    if (btnAlerta) {
+      btnAlerta.style.borderBottom = '3px solid #dc2626';
+      btnAlerta.style.color = '#dc2626';
+    }
+    if (btnPlanilla) {
+      btnPlanilla.style.borderBottom = '3px solid transparent';
+      btnPlanilla.style.color = '#64748b';
+    }
   }
-}
-
+} 
+  
 // Poblar tabla de seguimiento y actualizar badge numérico
 function poblarTablaSeguimiento(lista) {
   const tbodySeguimiento = document.querySelector('#tablaSeguimientoAlumnos tbody');
