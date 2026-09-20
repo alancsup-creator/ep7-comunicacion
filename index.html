@@ -2947,8 +2947,350 @@ function renderizarTablaAlumnos(alumnos) {
   `).join('');
 }
 
-// Ejecutar la carga al iniciar la pestaña o al cargar el DOM
+// ==========================================
+// MÓDULO DE INASISTENCIAS Y ALERTAS
+// ==========================================
+
+let mesInasistenciasActivo = '';
+const diasHabilesPorCurso = {};
+
+function poblarTablaInasistencias() {
+  const tbodyInasistencias = document.querySelector('#tablaInasistencias tbody');
+  if (!tbodyInasistencias) return;
+
+  tbodyInasistencias.innerHTML = '';
+
+  if (!listaAlumnosGlobal || listaAlumnosGlobal.length === 0) {
+    tbodyInasistencias.innerHTML = '<tr><td colspan="8" style="text-align:center;">Cargando lista de estudiantes...</td></tr>';
+    setTimeout(poblarTablaInasistencias, 500);
+    return;
+  }
+
+  listaAlumnosGlobal.forEach((alumno) => {
+    const curso = alumno.curso_division || '';
+    const nombreAlumno = alumno.nombre_apellido || '';
+
+    if (!nombreAlumno) return;
+
+    // Genera el ID compatible con las inasistencias previas
+    const alumnoId = `al_${nombreAlumno.toLowerCase().replace(/[^a-z0-9]/g, '_')}`;
+
+    const tr = document.createElement('tr');
+    tr.setAttribute('data-alumno-id', alumnoId);
+    tr.setAttribute('data-curso', curso);
+    tr.setAttribute('data-dias-clase', diasHabilesPorCurso[curso] || 20);
+
+    tr.innerHTML = `
+      <td><strong>${curso}</strong></td>
+      <td>${nombreAlumno}</td>
+      <td style="text-align: center;">
+        <input 
+          type="number" 
+          step="0.5" 
+          min="0" 
+          value="0" 
+          class="input-faltas" 
+          onchange="guardarInasistencia(this)" 
+          style="width: 70px; text-align: center; padding: 5px; font-weight: bold; border: 1px solid #ccc; border-radius: 4px;"
+        >
+      </td>
+      <td style="text-align: center;" class="asistencia-mes">0</td>
+      <td style="text-align: center; font-weight: bold;" class="porcentaje-mes">0%</td>
+      <td style="text-align: center; font-weight: bold; background-color: #fef3c7; color: #92400e; border-left: 2px solid #f59e0b; border-right: 1px solid #fde68a;" class="total-anual-acumulado">
+        0
+      </td>
+      <td style="text-align: center; font-weight: bold; background-color: #fffbe3; color: #78350f;" class="porcentaje-anual">
+        100%
+      </td>
+      <td style="text-align: center;" class="estado-asistencia">
+        <span style="background: #dcfce7; color: #15803d; padding: 3px 8px; border-radius: 12px; font-size: 12px; font-weight: bold;">Regular</span>
+      </td>
+    `;
+
+    tbodyInasistencias.appendChild(tr);
+  });
+
+  alCambiarFiltroOCurso();
+  cargarInasistenciasMensuales();
+}
+
+function recalcularFila(fila) {
+  const inputFaltas = fila.querySelector('.input-faltas');
+  const celdaAsistencia = fila.querySelector('.asistencia-mes');
+  const celdaPctInasistencia = fila.querySelector('.porcentaje-mes');
+
+  const diasClase = parseFloat(fila.getAttribute('data-dias-clase')) || 20;
+
+  const faltas = parseFloat(inputFaltas?.value) || 0;
+  const asistencias = Math.max(0, diasClase - faltas);
+  const pctInasistencia = diasClase > 0 ? Math.round((faltas / diasClase) * 100) : 0;
+
+  if (celdaAsistencia) celdaAsistencia.innerText = asistencias;
+  if (celdaPctInasistencia) celdaPctInasistencia.innerText = `${pctInasistencia}%`;
+}
+
+async function guardarInasistencia(inputEl) {
+  const fila = inputEl.closest('tr');
+  const alumnoId = fila.getAttribute('data-alumno-id');
+  const mes = mesInasistenciasActivo || document.getElementById('mesInasistencias')?.value.trim();
+  const diasClase = parseInt(fila.getAttribute('data-dias-clase')) || 20;
+
+  if (!mes) {
+    alert("Por favor, seleccioná un mes antes de registrar faltas.");
+    return;
+  }
+
+  recalcularFila(fila);
+  const faltasVal = parseFloat(inputEl.value) || 0;
+
+  const payload = {
+    alumno_id: alumnoId,
+    mes: mes,
+    dias_clase: diasClase,
+    faltas: faltasVal,
+    updated_at: new Date().toISOString()
+  };
+
+  const { data, error } = await supabaseClient
+    .from('inasistencias_alumnos')
+    .upsert(payload, { onConflict: 'alumno_id,mes' })
+    .select();
+
+  if (error) {
+    console.error('❌ Error al guardar en Supabase:', error);
+    alert("Error al guardar la inasistencia.");
+  } else {
+    cargarAcumuladoAnual();
+  }
+}
+
+async function cargarInasistenciasMensuales() {
+  const mes = mesInasistenciasActivo || document.getElementById('mesInasistencias')?.value.trim();
+  if (!mes) return;
+
+  const { data, error } = await supabaseClient
+    .from('inasistencias_alumnos')
+    .select('*')
+    .eq('mes', mes);
+
+  if (error) {
+    console.error('❌ Error al recuperar registros:', error);
+    return;
+  }
+
+  const mapaMensual = {};
+  if (data && data.length > 0) {
+    data.forEach(item => {
+      mapaMensual[item.alumno_id] = item;
+    });
+  }
+
+  document.querySelectorAll('#tablaInasistencias tbody tr').forEach(fila => {
+    const alumnoId = fila.getAttribute('data-alumno-id');
+    const cursoFila = fila.getAttribute('data-curso');
+    const inputFaltas = fila.querySelector('.input-faltas');
+
+    if (mapaMensual[alumnoId]) {
+      if (inputFaltas) inputFaltas.value = mapaMensual[alumnoId].faltas || 0;
+      
+      if (mapaMensual[alumnoId].dias_clase) {
+        fila.setAttribute('data-dias-clase', mapaMensual[alumnoId].dias_clase);
+        diasHabilesPorCurso[cursoFila] = mapaMensual[alumnoId].dias_clase;
+      }
+    } else {
+      if (inputFaltas) inputFaltas.value = 0;
+    }
+
+    recalcularFila(fila);
+  });
+
+  alCambiarFiltroOCurso();
+  cargarAcumuladoAnual();
+}
+
+async function cargarAcumuladoAnual() {
+  const mes = mesInasistenciasActivo || document.getElementById('mesInasistencias')?.value.trim();
+  if (!mes) return;
+
+  const anio = mes.split('-')[0];
+
+  const { data, error } = await supabaseClient
+    .from('inasistencias_alumnos')
+    .select('alumno_id, faltas, dias_clase')
+    .gte('mes', `${anio}-01`)
+    .lte('mes', `${anio}-12`);
+
+  if (error) {
+    console.error('❌ Error al calcular acumulado anual:', error);
+    return;
+  }
+
+  const acumuladosFaltas = {};
+  const acumuladosDiasClase = {};
+
+  if (data) {
+    data.forEach(rec => {
+      const faltas = parseFloat(rec.faltas) || 0;
+      const dias = parseInt(rec.dias_clase) || 20;
+
+      acumuladosFaltas[rec.alumno_id] = (acumuladosFaltas[rec.alumno_id] || 0) + faltas;
+      acumuladosDiasClase[rec.alumno_id] = (acumuladosDiasClase[rec.alumno_id] || 0) + dias;
+    });
+  }
+
+  const listaSeguimiento = [];
+
+  document.querySelectorAll('#tablaInasistencias tbody tr').forEach(fila => {
+    const alumnoId = fila.getAttribute('data-alumno-id');
+    const curso = fila.getAttribute('data-curso') || '';
+    const alumnoNombre = fila.children[1] ? fila.children[1].innerText.trim() : '';
+
+    const celdaAcumulado = fila.querySelector('.total-anual-acumulado');
+    const celdaPctAnual = fila.querySelector('.porcentaje-anual');
+    const celdaEstado = fila.querySelector('.estado-asistencia');
+
+    const totalFaltasAnio = acumuladosFaltas[alumnoId] || 0;
+    const diasFilaLocal = parseInt(fila.getAttribute('data-dias-clase')) || 20;
+    const totalDiasEscolares = acumuladosDiasClase[alumnoId] || diasFilaLocal;
+
+    const asistenciasAnio = Math.max(0, totalDiasEscolares - totalFaltasAnio);
+    const pctAsistenciaAnual = totalDiasEscolares > 0 
+      ? Math.round((asistenciasAnio / totalDiasEscolares) * 100) 
+      : 100;
+
+    if (celdaAcumulado) celdaAcumulado.innerText = totalFaltasAnio;
+    if (celdaPctAnual) celdaPctAnual.innerText = `${pctAsistenciaAnual}%`;
+
+    let estadoHTML = '';
+    let estadoTexto = 'Regular';
+
+    if (pctAsistenciaAnual < 70) {
+      estadoTexto = 'Alerta';
+      estadoHTML = `<span style="background: #fef2f2; color: #dc2626; border: 1px solid #fca5a5; padding: 3px 8px; border-radius: 12px; font-size: 12px; font-weight: bold;">🚨 Alerta</span>`;
+    } else if (pctAsistenciaAnual >= 70 && pctAsistenciaAnual < 80) {
+      estadoTexto = 'Riesgo';
+      estadoHTML = `<span style="background: #fffbe3; color: #b45309; border: 1px solid #fde68a; padding: 3px 8px; border-radius: 12px; font-size: 12px; font-weight: bold;">⚠️ Riesgo</span>`;
+    } else {
+      estadoTexto = 'Regular';
+      estadoHTML = `<span style="background: #dcfce7; color: #15803d; padding: 3px 8px; border-radius: 12px; font-size: 12px; font-weight: bold;">✅ Regular</span>`;
+    }
+
+    if (celdaEstado) celdaEstado.innerHTML = estadoHTML;
+
+    if (estadoTexto === 'Riesgo' || estadoTexto === 'Alerta') {
+      listaSeguimiento.push({
+        curso: curso,
+        alumno: alumnoNombre,
+        faltas: totalFaltasAnio,
+        pct: pctAsistenciaAnual,
+        estadoHTML: estadoHTML
+      });
+    }
+  });
+
+  poblarTablaSeguimiento(listaSeguimiento);
+}
+
+function poblarTablaSeguimiento(lista) {
+  const tbodySeguimiento = document.querySelector('#tablaSeguimientoAlumnos tbody');
+  const badge = document.getElementById('badgeContadorAlerta');
+
+  if (badge) {
+    if (lista.length > 0) {
+      badge.innerText = lista.length;
+      badge.style.display = 'inline-block';
+    } else {
+      badge.style.display = 'none';
+    }
+  }
+
+  if (!tbodySeguimiento) return;
+
+  if (lista.length === 0) {
+    tbodySeguimiento.innerHTML = `
+      <tr>
+        <td colspan="5" style="text-align: center; color: #64748b; padding: 20px;">
+          🎉 <strong>Sin situaciones críticas:</strong> No hay estudiantes en situación de riesgo o alerta en el período activo.
+        </td>
+      </tr>
+    `;
+    return;
+  }
+
+  tbodySeguimiento.innerHTML = '';
+  lista.forEach(item => {
+    const tr = document.createElement('tr');
+    tr.innerHTML = `
+      <td><strong>${item.curso}</strong></td>
+      <td>${item.alumno}</td>
+      <td style="text-align: center; font-weight: bold; color: #b91c1c;">${item.faltas}</td>
+      <td style="text-align: center; font-weight: bold;">${item.pct}%</td>
+      <td style="text-align: center;">${item.estadoHTML}</td>
+    `;
+    tbodySeguimiento.appendChild(tr);
+  });
+}
+
+function obtenerCursoSeleccionado() {
+  const anio = document.getElementById('selectAnioInasistencias')?.value || '';
+  const seccion = document.getElementById('selectSeccionInasistencias')?.value || '';
+  return `${anio} ${seccion}`.trim();
+}
+
+function alCambiarFiltroOCurso() {
+  filtrarTablaInasistencias();
+  const cursoClave = obtenerCursoSeleccionado();
+  const inputDias = document.getElementById('diasClaseMes');
+  if (inputDias) {
+    inputDias.value = diasHabilesPorCurso[cursoClave] || 20;
+  }
+}
+
+function filtrarTablaInasistencias() {
+  const buscador = document.getElementById('inputBuscarInasistencia')?.value.toLowerCase().trim() || '';
+  const anioFiltro = document.getElementById('selectAnioInasistencias')?.value.trim() || '';
+  const seccionFiltro = document.getElementById('selectSeccionInasistencias')?.value.trim() || '';
+
+  const numAnioFiltro = anioFiltro.replace(/[^0-9]/g, '');
+  const numSeccionFiltro = seccionFiltro.replace(/[^0-9]/g, '');
+
+  const filas = document.querySelectorAll('#tablaInasistencias tbody tr');
+
+  filas.forEach(fila => {
+    const cursoTexto = fila.children[0] ? fila.children[0].innerText.trim() : '';
+    const alumnoTexto = fila.children[1] ? fila.children[1].innerText.toLowerCase() : '';
+
+    const numerosCurso = cursoTexto.match(/\d+/g) || [];
+    const anioFilaNum = numerosCurso[0] || '';
+    const seccionFilaNum = numerosCurso[1] || '';
+
+    const coincideNombre = alumnoTexto.includes(buscador);
+    const coincideAnio = !numAnioFiltro || anioFilaNum === numAnioFiltro;
+    const coincideSeccion = !numSeccionFiltro || seccionFilaNum === numSeccionFiltro;
+
+    if (coincideNombre && coincideAnio && coincideSeccion) {
+      fila.style.display = '';
+    } else {
+      fila.style.display = 'none';
+    }
+  });
+}
+
+// INICIALIZACIÓN
 document.addEventListener('DOMContentLoaded', () => {
+  const inputMes = document.getElementById('mesInasistencias');
+  if (inputMes && !inputMes.value) {
+    const hoy = new Date();
+    const yyyy = hoy.getFullYear();
+    const mm = String(hoy.getMonth() + 1).padStart(2, '0');
+    inputMes.value = `${yyyy}-${mm}`;
+  }
+
+  if (inputMes) {
+    mesInasistenciasActivo = inputMes.value;
+  }
+
+  // Carga de alumnos desde Supabase
   cargarAlumnosDesdeSupabase();
 });
 </script>
