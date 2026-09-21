@@ -1251,17 +1251,18 @@
 <!-- 2. Pestaña Independiente: Gestión de Estudiantes -->
 <section id="gestion-estudiantes" class="tab-content" style="display: none;">
   <h2>👥 Gestión y Modificación de Estudiantes</h2>
-  <p>Panel para altas, bajas, promociones y edición de matrículas.</p>
+  <p>Panel para altas, bajas, promociones, búsquedas y edición de matrículas.</p>
   
   <hr style="margin: 20px 0; border: 0; border-top: 1px solid #cbd5e1;">
 
   <div style="padding: 20px; background: #fff; border-radius: 8px; box-shadow: 0 4px 12px rgba(0,0,0,0.1);">
     
-    <!-- Formulario para Nueva Inscripción -->
+    <!-- Formulario para Nueva Inscripción (Incluye DNI) -->
     <fieldset style="border: 1px solid #cbd5e1; border-radius: 6px; padding: 15px; margin-bottom: 20px;">
       <legend style="font-weight: bold; color: #1e3a8a;">➕ Agregar Nueva Inscripción</legend>
       <div style="display: flex; gap: 10px; flex-wrap: wrap;">
         <input type="text" id="nuevoNombre" placeholder="Nombre y Apellido" style="padding: 8px; flex: 2; min-width: 180px;">
+        <input type="text" id="nuevoDni" placeholder="DNI (opcional)" style="padding: 8px; flex: 1; min-width: 110px;">
         <input type="text" id="nuevoTelefono" placeholder="Teléfono" style="padding: 8px; flex: 1; min-width: 120px;">
         <select id="nuevoAnio" style="padding: 8px; flex: 1;">
           <option value="1°">1° Año</option>
@@ -1283,25 +1284,31 @@
       </div>
     </fieldset>
 
-    <!-- Acciones Masivas -->
-    <div style="display: flex; gap: 10px; margin-bottom: 15px; background: #f8fafc; padding: 10px; border-radius: 6px;">
-      <button onclick="promoverSeleccionados()" style="background: #2563eb; color: white; border: none; padding: 8px 12px; border-radius: 6px; cursor: pointer; font-weight: bold;">
-        ⬆️ Promover Seleccionados (+1 Año)
-      </button>
-      <button onclick="egresarSeleccionados()" style="background: #dc2626; color: white; border: none; padding: 8px 12px; border-radius: 6px; cursor: pointer; font-weight: bold;">
-        🎓 Egresar / Dar de Baja Seleccionados
-      </button>
+    <!-- Barra de Búsqueda y Acciones Masivas -->
+    <div style="display: flex; justify-content: space-between; align-items: center; gap: 10px; margin-bottom: 15px; background: #f8fafc; padding: 12px; border-radius: 6px; flex-wrap: wrap;">
+      <div style="flex: 1; min-width: 250px;">
+        <input type="text" id="inputBuscarGestionAlumno" onkeyup="filtrarTablaGestionAlumnos()" placeholder="🔍 Buscar por nombre, DNI o curso..." style="width: 100%; padding: 8px; border: 1px solid #cbd5e1; border-radius: 6px;">
+      </div>
+      <div style="display: flex; gap: 10px;">
+        <button onclick="promoverSeleccionados()" style="background: #2563eb; color: white; border: none; padding: 8px 12px; border-radius: 6px; cursor: pointer; font-weight: bold;">
+          ⬆️ Promover Seleccionados (+1 Año)
+        </button>
+        <button onclick="egresarSeleccionados()" style="background: #dc2626; color: white; border: none; padding: 8px 12px; border-radius: 6px; cursor: pointer; font-weight: bold;">
+          🎓 Egresar / Bajas Seleccionadas
+        </button>
+      </div>
     </div>
 
     <!-- Tabla de Alumnos -->
     <table id="tablaGestionAlumnos" style="width: 100%; border-collapse: collapse;">
       <thead>
         <tr style="background: #f1f5f9; text-align: left;">
-          <th><input type="checkbox" id="checkTodosAlumnos" onchange="marcarTodosAlumnos(this)"></th>
-          <th>Estudiante</th>
-          <th>Curso Actual</th>
-          <th>Teléfono</th>
-          <th>Acciones / Mover</th>
+          <th style="padding: 10px;"><input type="checkbox" id="checkTodosAlumnos" onchange="marcarTodosAlumnos(this)"></th>
+          <th style="padding: 10px;">DNI</th>
+          <th style="padding: 10px;">Estudiante</th>
+          <th style="padding: 10px;">Curso Actual</th>
+          <th style="padding: 10px;">Teléfono</th>
+          <th style="padding: 10px; text-align: center;">Acciones</th>
         </tr>
       </thead>
       <tbody>
@@ -2338,8 +2345,25 @@ function cambiarSubPestanaInasistencias(subTab) {
 }
 
 // 12. GESTIÓN DE ALUMNO Y USUARIOS
+// Filtrar estudiantes en tiempo real dentro del panel de gestión
+function filtrarTablaGestionAlumnos() {
+  const busqueda = document.getElementById('inputBuscarGestionAlumno')?.value.toLowerCase().trim() || '';
+  const filas = document.querySelectorAll('#tablaGestionAlumnos tbody tr');
+
+  filas.forEach(fila => {
+    const textoFila = fila.innerText.toLowerCase();
+    if (textoFila.includes(busqueda)) {
+      fila.style.display = '';
+    } else {
+      fila.style.display = 'none';
+    }
+  });
+}
+
+// Reemplazo de la función para inscribir incluyendo el DNI
 async function agregarNuevoAlumno() {
   const nombre = document.getElementById('nuevoNombre')?.value.trim();
+  const dni = document.getElementById('nuevoDni')?.value.trim();
   const telefono = document.getElementById('nuevoTelefono')?.value.trim();
   const anio = document.getElementById('nuevoAnio')?.value;
   const seccion = document.getElementById('nuevaSeccion')?.value;
@@ -2354,11 +2378,12 @@ async function agregarNuevoAlumno() {
   try {
     const cliente = typeof supabaseClient !== 'undefined' ? supabaseClient : supabase;
 
-    const { data, error } = await cliente
+    const { error } = await cliente
       .from('alumnos')
       .insert([
         { 
           nombre_apellido: nombre.toUpperCase(), 
+          dni: dni || null,
           teléfono: telefono || null, 
           curso_division: cursoFormateado,
           estado: 'activo' 
@@ -2366,25 +2391,26 @@ async function agregarNuevoAlumno() {
       ]);
 
     if (error) {
-      console.error("Error al inscribir alumno:", error);
-      alert("No se pudo inscribir al alumno: " + error.message);
+      alert("Error al inscribir al estudiante: " + error.message);
       return;
     }
 
-    alert("¡Estudiante inscripto con éxito en Supabase!");
+    alert("¡Estudiante inscripto con éxito!");
 
+    // Limpiar campos
     document.getElementById('nuevoNombre').value = '';
+    if (document.getElementById('nuevoDni')) document.getElementById('nuevoDni').value = '';
     if (document.getElementById('nuevoTelefono')) document.getElementById('nuevoTelefono').value = '';
 
-    if (typeof cargarAlumnosDesdeSupabase === 'function') {
-      cargarAlumnosDesdeSupabase();
+    // Recargar la tabla
+    if (typeof cargarTablaGestionAlumnos === 'function') {
+      cargarTablaGestionAlumnos();
     }
-
   } catch (err) {
     console.error("Error inesperado:", err);
   }
 }
-
+  
 async function promoverSeleccionados() {
   const checkboxes = document.querySelectorAll('.check-alumno-gestion:checked');
   if (checkboxes.length === 0) {
