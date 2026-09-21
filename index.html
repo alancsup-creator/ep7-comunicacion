@@ -2016,12 +2016,71 @@ document.addEventListener('DOMContentLoaded', () => {
 });
 
 // Obtener la clave del curso visible actualmente según las selecciones
+// 1. Normalizar la obtención del curso seleccionado desde los desplegables
 function obtenerCursoSeleccionado() {
-  const anio = document.getElementById('selectAnioInasistencias')?.value || '';
-  const seccion = document.getElementById('selectSeccionInasistencias')?.value || '';
+  const anio = document.getElementById('selectAnioInasistencias')?.value.trim() || '';
+  const seccion = document.getElementById('selectSeccionInasistencias')?.value.trim() || '';
+  
+  if (!anio && !seccion) return '';
   return `${anio} ${seccion}`.trim();
 }
 
+// 2. Evento al cambiar de Año o División en los desplegables
+function alCambiarFiltroOCurso() {
+  // Filtrar la planilla
+  filtrarTablaInasistencias();
+  
+  const cursoClave = obtenerCursoSeleccionado();
+  const inputDias = document.getElementById('diasClaseMes');
+  
+  if (inputDias) {
+    // Si ya hay días guardados para este curso, los asigna; si no, deja 20 por defecto
+    inputDias.value = diasHabilesPorCurso[cursoClave] || 20;
+  }
+
+  // Recalcular métricas de las filas visibles
+  document.querySelectorAll('#tablaInasistencias tbody tr').forEach(fila => {
+    if (fila.style.display !== 'none') {
+      const diasFila = diasHabilesPorCurso[cursoClave] || parseInt(inputDias?.value) || 20;
+      fila.setAttribute('data-dias-clase', diasFila);
+      recalcularFila(fila);
+    }
+  });
+
+  // Actualizar reportes si están activos
+  const divConsulta = document.getElementById('subTabConsultaInasistencias');
+  if (divConsulta && divConsulta.style.display !== 'none') {
+    if (typeof cargarReporteInasistencias === 'function') cargarReporteInasistencias();
+  }
+}
+
+// 3. Evento al modificar los días hábiles en el input
+function actualizarDiasHabilesDelCursoActual() {
+  const cursoClave = obtenerCursoSeleccionado();
+  const inputDias = document.getElementById('diasClaseMes');
+  const nuevosDias = parseInt(inputDias?.value) || 20;
+
+  if (cursoClave) {
+    // Guardar los días específicos para este curso/división
+    diasHabilesPorCurso[cursoClave] = nuevosDias;
+  }
+
+  // Actualizar las filas que pertenecen al curso seleccionado
+  document.querySelectorAll('#tablaInasistencias tbody tr').forEach(fila => {
+    const cursoFila = fila.getAttribute('data-curso') || '';
+    
+    // Compara el curso del filtro con el curso asignado a la fila del alumno
+    if (!cursoClave || cursoFila.includes(cursoClave) || fila.style.display !== 'none') {
+      fila.setAttribute('data-dias-clase', nuevosDias);
+      recalcularFila(fila);
+    }
+  });
+
+  // Recalcular el acumulado anual de la vista
+  if (typeof cargarAcumuladoAnual === 'function') {
+    cargarAcumuladoAnual();
+  }
+}
 // Evento al cambiar de Año o División en los desplegables
 function alCambiarFiltroOCurso() {
   // 1. Filtrar la tabla de la planilla de carga
