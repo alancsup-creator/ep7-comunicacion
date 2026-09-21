@@ -2688,6 +2688,32 @@ document.addEventListener('DOMContentLoaded', () => {
     cargarAlumnosDesdeSupabase();
   }
 });
+  
+// Carga e inicialización de la Gestión de Estudiantes
+document.addEventListener('DOMContentLoaded', () => {
+  // 1. Cargar la tabla al iniciar la página por si arranca visible
+  if (typeof cargarTablaGestionAlumnos === 'function') {
+    cargarTablaGestionAlumnos();
+  }
+
+  // 2. Observar cuando se pasa a la pestaña de gestión de estudiantes
+  const seccionGestion = document.getElementById('gestion-estudiantes');
+  if (seccionGestion) {
+    const observer = new MutationObserver((mutations) => {
+      mutations.forEach((mutation) => {
+        if (mutation.attributeName === 'style') {
+          const estaVisible = window.getComputedStyle(seccionGestion).display !== 'none';
+          if (estaVisible && typeof cargarTablaGestionAlumnos === 'function') {
+            cargarTablaGestionAlumnos();
+          }
+        }
+      });
+    });
+
+    observer.observe(seccionGestion, { attributes: true });
+  }
+});
+  
 </script>
 </body>
 </html>
