@@ -595,16 +595,18 @@
       <div style="display: flex; gap: 12px; flex-wrap: wrap; align-items: flex-end; margin-bottom: 16px; background: #f8fafc; padding: 12px; border-radius: 8px; border: 1px solid #e2e8f0;">
         
         <!-- Filtro Periodo Lectivo / Trimestres -->
-        <div style="flex: 1.5; min-width: 200px;">
-          <label style="font-size: 12px; font-weight: bold; color: #475569; display: block; margin-bottom: 4px;">Periodo / Trimestre:</label>
-          <select id="filtroTrimestreConsulta" onchange="filtrarReporteTrimestralJS()" style="width: 100%; padding: 8px; font-size: 14px; border: 1px solid #cbd5e1; border-radius: 6px; font-weight: 600;">
-            <option value="anual">📅 Acumulado Anual</option>
-            <option value="t1">1er Trimestre (Marzo - Mayo)</option>
-            <option value="t2">2do Trimestre (Junio - Agosto)</option>
-            <option value="t3">3er Trimestre (Septiembre - Noviembre)</option>
-            <option value="dic">❄️ Diciembre (Solo)</option>
-          </select>
-        </div>
+<div style="flex: 1.5; min-width: 200px;">
+  <label style="font-size: 12px; font-weight: bold; color: #475569; display: block; margin-bottom: 4px;">Periodo / Trimestre:</label>
+  <select id="filtroTrimestreConsulta" onchange="filtrarReporteTrimestralJS()" style="width: 100%; padding: 8px; font-size: 14px; border: 1px solid #cbd5e1; border-radius: 6px; font-weight: 600;">
+    <option value="anual">📅 Acumulado Anual</option>
+    <option value="t1">1er Trimestre (Marzo - Mayo)</option>
+    <option value="t2">2do Trimestre (Junio - Agosto)</option>
+    <option value="t3">3er Trimestre (Septiembre - Noviembre)</option>
+    <option value="dic">❄️ Diciembre (Solo)</option>
+    <!-- NUEVA OPCIÓN DE FILTRO ALERTA TRIMESTRAL -->
+    <option value="riesgo_trimestral" style="font-weight: bold; color: #dc2626;">⚠️ Alerta (&ge; 10 faltas en un trimestre)</option>
+  </select>
+</div>
 
         <!-- Búsqueda por Nombre o Apellido -->
         <div style="flex: 2; min-width: 220px;">
@@ -3022,29 +3024,45 @@ function filtrarReporteTrimestralJS() {
   const busqueda = document.getElementById('inputBuscarAlumnoConsulta')?.value.toLowerCase().trim() || '';
 
   const filtrados = (listaAlumnosReporteInasistencias || []).filter(al => {
-    return !busqueda || al.nombre.toLowerCase().includes(busqueda);
+    // 1. Filtro por nombre/apellido
+    const coincideNombre = !busqueda || al.nombre.toLowerCase().includes(busqueda);
+    if (!coincideNombre) return false;
+
+    // 2. Si se selecciona el filtro especial de >= 10 faltas en algún trimestre
+    if (periodo === 'riesgo_trimestral') {
+      return al.t1 >= 10 || al.t2 >= 10 || al.t3 >= 10;
+    }
+
+    return true;
   });
 
   if (filtrados.length === 0) {
-    tbody.innerHTML = '<tr><td colspan="6" style="text-align: center; color: #64748b; padding: 20px;">No se encontraron registros.</td></tr>';
+    tbody.innerHTML = '<tr><td colspan="6" style="text-align: center; color: #64748b; padding: 20px;">No se encontraron registros para los criterios seleccionados.</td></tr>';
     return;
   }
 
   tbody.innerHTML = '';
   filtrados.forEach(al => {
     let faltasPeriodo = al.totalAnual;
+    
+    // Determinar qué faltas mostrar en la columna "Faltas Periodo"
     if (periodo === 't1') faltasPeriodo = al.t1;
-    if (periodo === 't2') faltasPeriodo = al.t2;
-    if (periodo === 't3') faltasPeriodo = al.t3;
-    if (periodo === 'dic') faltasPeriodo = al.dic;
+    else if (periodo === 't2') faltasPeriodo = al.t2;
+    else if (periodo === 't3') faltasPeriodo = al.t3;
+    else if (periodo === 'dic') faltasPeriodo = al.dic;
+    else if (periodo === 'riesgo_trimestral') {
+      // Muestra el máximo de faltas que tuvo en alguno de los trimestres
+      faltasPeriodo = Math.max(al.t1, al.t2, al.t3);
+    }
 
-   let badgeEstado = '<span style="background: #dcfce7; color: #15803d; padding: 4px 8px; border-radius: 12px; font-weight: bold; font-size: 11px;">Normal</span>';
-
-if (al.pctAsistenciaAnual < 70) {
-  badgeEstado = '<span style="background: #fee2e2; color: #b91c1c; padding: 4px 8px; border-radius: 12px; font-weight: bold; font-size: 11px;">🚨 Crítico</span>';
-} else if (al.pctAsistenciaAnual >= 70 && al.pctAsistenciaAnual < 80) {
-  badgeEstado = '<span style="background: #fef3c7; color: #b45309; padding: 4px 8px; border-radius: 12px; font-weight: bold; font-size: 11px;">⚠️ En Riesgo</span>';
-}
+    // Badge según el nuevo criterio (0-70% Alerta, 70-80% Riesgo, 80-100% Normal)
+    let badgeEstado = '<span style="background: #dcfce7; color: #15803d; padding: 4px 8px; border-radius: 12px; font-weight: bold; font-size: 11px;">Normal</span>';
+    
+    if (al.pctAsistenciaAnual < 70 || al.t1 >= 10 || al.t2 >= 10 || al.t3 >= 10) {
+      badgeEstado = '<span style="background: #fee2e2; color: #b91c1c; padding: 4px 8px; border-radius: 12px; font-weight: bold; font-size: 11px;">🚨 Alerta</span>';
+    } else if (al.pctAsistenciaAnual >= 70 && al.pctAsistenciaAnual < 80) {
+      badgeEstado = '<span style="background: #fef3c7; color: #b45309; padding: 4px 8px; border-radius: 12px; font-weight: bold; font-size: 11px;">⚠️ En Riesgo</span>';
+    }
 
     const tr = document.createElement('tr');
     tr.style.borderBottom = '1px solid #e2e8f0';
@@ -3054,7 +3072,7 @@ if (al.pctAsistenciaAnual < 70) {
       <td style="padding: 10px;"><strong>${al.nombre}</strong></td>
       <td style="padding: 10px; text-align: center; font-weight: bold; color: #0284c7; font-size: 15px;">${faltasPeriodo}</td>
       <td style="padding: 10px; text-align: center; font-weight: bold; background-color: #fffbeb;">${al.totalAnual}</td>
-      <td style="padding: 10px; text-align: center; font-weight: bold; background-color: #fefce8;">${al.pctInasistenciaAnual}%</td>
+      <td style="padding: 10px; text-align: center; font-weight: bold; background-color: #fefce8;">${al.pctAsistenciaAnual}%</td>
       <td style="padding: 10px; text-align: center;">${badgeEstado}</td>
     `;
     tbody.appendChild(tr);
