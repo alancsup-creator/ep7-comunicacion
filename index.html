@@ -2244,65 +2244,6 @@ async function cargarAcumuladoAnual() {
   const mesSeleccionado = mesInasistenciasActivo || inputMes?.value.trim();
   if (!mesSeleccionado) return;
 
-  // Extraer el año (ej: "2026")
-  const anio = mesSeleccionado.split('-')[0];
-
-  // 1. Consultar TODOS los registros del año activo para la tabla inasistencias_alumnos
-  const { data, error } = await supabaseClient
-    .from('inasistencias_alumnos')
-    .select('alumno_id, faltas, dias_clase, mes')
-    .like('mes', `${anio}-%`); // Trae todos los meses del año (2026-01, 2026-02, etc.)
-
-  if (error) {
-    console.error('❌ Error al calcular acumulado anual:', error);
-    return;
-  }
-
-  // 2. Acumular faltas y días hábiles por cada alumno
-  const acumuladosFaltas = {};
-  const acumuladosDiasClase = {};
-
-  if (data && data.length > 0) {
-    data.forEach(rec => {
-      const id = rec.alumno_id;
-      const faltas = parseFloat(rec.faltas) || 0;
-      const dias = parseInt(rec.dias_clase) || 20;
-
-      acumuladosFaltas[id] = (acumuladosFaltas[id] || 0) + faltas;
-      acumuladosDiasClase[id] = (acumuladosDiasClase[id] || 0) + dias;
-    });
-  }
-
-  const listaSeguimiento = [];
-
-  // 3. Recorrer cada fila de la tabla para actualizar la pantalla
-  document.querySelectorAll('#tablaInasistencias tbody tr').forEach(fila => {
-    const alumnoId = fila.getAttribute('data-alumno-id');
-    const curso = fila.getAttribute('data-curso') || '';
-    const alumnoNombre = fila.children[1] ? fila.children[1].innerText.trim() : '';
-
-    const celdaAcumulado = fila.querySelector('.total-anual-acumulado');
-    const celdaPctAnual = fila.querySelector('.porcentaje-anual');
-    const celdaEstado = fila.querySelector('.estado-asistencia');
-
-    // Faltas totales guardadas en el año
-    const totalFaltasAnio = acumuladosFaltas[alumnoId] || 0;
-    
-    // Días de clase acumulados de los meses registrados (o los del mes activo si no hay historial)
-    const diasFilaLocal = parseInt(fila.getAttribute('data-dias-clase')) || 20;
-    const totalDiasEscolares = acumuladosDiasClase[alumnoId] || diasFilaLocal;
-
-    // Asistencias y porcentaje anual
-    const asistenciasAnio = Math.max(0, totalDiasEscolares - totalFaltasAnio);
-    const pctAsistenciaAnual = totalDiasEscolares > 0 
-      ? Math.round((asistenciasAnio / totalDiasEscolares) * 100) 
-      : 100;
-
-async function cargarAcumuladoAnual() {
-  const inputMes = document.getElementById('mesInasistencias');
-  const mesSeleccionado = mesInasistenciasActivo || inputMes?.value.trim();
-  if (!mesSeleccionado) return;
-
   const anio = mesSeleccionado.split('-')[0];
 
   // 1. Traer todos los registros del año activo desde Supabase
@@ -2393,10 +2334,7 @@ async function cargarAcumuladoAnual() {
   });
 
   poblarTablaSeguimiento(listaSeguimiento);
-}
-
-
-// 9. Renderizar tabla de seguimiento prioritario
+}// 9. Renderizar tabla de seguimiento prioritario
 function poblarTablaSeguimiento(lista) {
   const tbodySeguimiento = document.querySelector('#tablaSeguimientoAlumnos tbody');
   const badge = document.getElementById('badgeContadorAlerta');
