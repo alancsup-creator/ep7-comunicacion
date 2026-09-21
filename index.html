@@ -2293,11 +2293,14 @@ async function cargarAcumuladoAnual() {
     let estadoHTML = '';
     let estadoTexto = 'Regular';
 
-    // Criterio Institucional: Alerta con 15 o más faltas acumuladas (o <75% asistencia)
-    if (totalFaltasAnio >= 15 || pctAsistenciaAnual < 75) {
+    // NUEVO CRITERIO SOLICITADO:
+    // 0% a 69.99% (< 70%): Alerta
+    // 70% a 79.99% (< 80%): En riesgo
+    // 80% a 100%: Regular
+    if (pctAsistenciaAnual < 70) {
       estadoTexto = 'Alerta';
       estadoHTML = `<span style="background: #fef2f2; color: #dc2626; border: 1px solid #fca5a5; padding: 3px 8px; border-radius: 12px; font-size: 12px; font-weight: bold;">🚨 Alerta</span>`;
-    } else if (totalFaltasAnio >= 10 || (pctAsistenciaAnual >= 75 && pctAsistenciaAnual < 85)) {
+    } else if (pctAsistenciaAnual >= 70 && pctAsistenciaAnual < 80) {
       estadoTexto = 'Riesgo';
       estadoHTML = `<span style="background: #fffbe3; color: #b45309; border: 1px solid #fde68a; padding: 3px 8px; border-radius: 12px; font-size: 12px; font-weight: bold;">⚠️ Riesgo</span>`;
     } else {
@@ -3035,12 +3038,13 @@ function filtrarReporteTrimestralJS() {
     if (periodo === 't3') faltasPeriodo = al.t3;
     if (periodo === 'dic') faltasPeriodo = al.dic;
 
-    let badgeEstado = '<span style="background: #dcfce7; color: #15803d; padding: 4px 8px; border-radius: 12px; font-weight: bold; font-size: 11px;">Normal</span>';
-    if (al.pctInasistenciaAnual >= 15 && al.pctInasistenciaAnual < 25) {
-      badgeEstado = '<span style="background: #fef3c7; color: #b45309; padding: 4px 8px; border-radius: 12px; font-weight: bold; font-size: 11px;">⚠️ En Riesgo</span>';
-    } else if (al.pctInasistenciaAnual >= 25) {
-      badgeEstado = '<span style="background: #fee2e2; color: #b91c1c; padding: 4px 8px; border-radius: 12px; font-weight: bold; font-size: 11px;">🚨 Crítico</span>';
-    }
+   let badgeEstado = '<span style="background: #dcfce7; color: #15803d; padding: 4px 8px; border-radius: 12px; font-weight: bold; font-size: 11px;">Normal</span>';
+
+if (al.pctAsistenciaAnual < 70) {
+  badgeEstado = '<span style="background: #fee2e2; color: #b91c1c; padding: 4px 8px; border-radius: 12px; font-weight: bold; font-size: 11px;">🚨 Crítico</span>';
+} else if (al.pctAsistenciaAnual >= 70 && al.pctAsistenciaAnual < 80) {
+  badgeEstado = '<span style="background: #fef3c7; color: #b45309; padding: 4px 8px; border-radius: 12px; font-weight: bold; font-size: 11px;">⚠️ En Riesgo</span>';
+}
 
     const tr = document.createElement('tr');
     tr.style.borderBottom = '1px solid #e2e8f0';
