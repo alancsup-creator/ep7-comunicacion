@@ -2298,11 +2298,73 @@ async function cargarAcumuladoAnual() {
       ? Math.round((asistenciasAnio / totalDiasEscolares) * 100) 
       : 100;
 
-    // Actualizar celdas en la tabla
+async function cargarAcumuladoAnual() {
+  const inputMes = document.getElementById('mesInasistencias');
+  const mesSeleccionado = mesInasistenciasActivo || inputMes?.value.trim();
+  if (!mesSeleccionado) return;
+
+  const anio = mesSeleccionado.split('-')[0];
+
+  // 1. Traer todos los registros del año activo desde Supabase
+  const { data, error } = await supabaseClient
+    .from('inasistencias_alumnos')
+    .select('alumno_id, faltas, dias_clase, mes')
+    .like('mes', `${anio}-%`);
+
+  if (error) {
+    console.error('❌ Error al calcular acumulado anual:', error);
+    return;
+  }
+
+  // 2. Mapa para sumar las faltas por alumno
+  const acumuladosFaltas = {};
+
+  if (data && data.length > 0) {
+    data.forEach(rec => {
+      const id = rec.alumno_id;
+      const faltas = parseFloat(rec.faltas) || 0;
+
+      // Sumar faltas del historial en Supabase
+      acumuladosFaltas[id] = (acumuladosFaltas[id] || 0) + faltas;
+    });
+  }
+
+  const listaSeguimiento = [];
+
+  // 3. Recorrer cada fila visible en la tabla
+  document.querySelectorAll('#tablaInasistencias tbody tr').forEach(fila => {
+    const alumnoId = fila.getAttribute('data-alumno-id');
+    const curso = fila.getAttribute('data-curso') || '';
+    const alumnoNombre = fila.children[1] ? fila.children[1].innerText.trim() : '';
+
+    const inputFaltasMes = fila.querySelector('.input-faltas');
+    const celdaAcumulado = fila.querySelector('.total-anual-acumulado');
+    const celdaPctAnual = fila.querySelector('.porcentaje-anual');
+    const celdaEstado = fila.querySelector('.estado-asistencia');
+
+    // Faltas del mes actual directo del input en pantalla
+    const faltasMesActual = parseFloat(inputFaltasMes?.value) || 0;
+
+    // Faltas históricas guardadas en Supabase (si existen)
+    const faltasHistoricas = acumuladosFaltas[alumnoId] || 0;
+
+    // Si el mes actual ya se guardó en Supabase, evitamos duplicar sumando las faltas históricas directo
+    // Total acumulado anual de faltas:
+    const totalFaltasAnio = faltasHistoricas;
+
+    // Días hábiles base del año (ejemplo estimado de 180 días o la suma de meses)
+    // Ajustado según días del curso o promedio mensual (20 días * cantidad de meses transcurridos)
+    const diasMesLocal = parseInt(fila.getAttribute('data-dias-clase')) || 20;
+    
+    // Asistencia y porcentaje anual respecto a los días evaluados
+    const pctInasistenciaAnual = diasMesLocal > 0 ? Math.round((totalFaltasAnio / (diasMesLocal * 9)) * 100) : 0;
+    const pctAsistenciaAnual = Math.max(0, 100 - pctInasistenciaAnual);
+
+    // Actualizar pantalla
     if (celdaAcumulado) celdaAcumulado.innerText = totalFaltasAnio;
     if (celdaPctAnual) celdaPctAnual.innerText = `${pctAsistenciaAnual}%`;
 
-    // Evaluar situación del alumno
+    // Estado institucional
     let estadoHTML = '';
     let estadoTexto = 'Regular';
 
@@ -2319,7 +2381,6 @@ async function cargarAcumuladoAnual() {
 
     if (celdaEstado) celdaEstado.innerHTML = estadoHTML;
 
-    // Si está en situación crítica, agregar a la tabla de alertas
     if (estadoTexto === 'Riesgo' || estadoTexto === 'Alerta') {
       listaSeguimiento.push({
         curso: curso,
