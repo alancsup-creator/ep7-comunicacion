@@ -2946,14 +2946,14 @@ async function cargarReporteInasistencias() {
   try {
     const cliente = typeof supabaseClient !== 'undefined' ? supabaseClient : supabase;
 
-    // Obtener valores de Año y División seleccionados en la cabecera
-    const anio = document.getElementById('selectAnioInasistencias')?.value || '';
-    const seccion = document.getElementById('selectSeccionInasistencias')?.value || '';
+    // Obtener la clave combinada (ej: "1° 1ª") usando la función existente
+    const cursoClave = typeof obtenerCursoSeleccionado === 'function' ? obtenerCursoSeleccionado() : '';
 
-    // Consultar alumnos filtrados si hay selección
+    // Consultar alumnos filtrados por la columna 'curso_division'
     let queryAlumnos = cliente.from('alumnos').select('*');
-    if (anio) queryAlumnos = queryAlumnos.eq('curso', anio);
-    if (seccion) queryAlumnos = queryAlumnos.eq('division', seccion);
+    if (cursoClave) {
+      queryAlumnos = queryAlumnos.eq('curso_division', cursoClave);
+    }
 
     const { data: alumnos, error: errAlumnos } = await queryAlumnos;
     if (errAlumnos) throw errAlumnos;
@@ -2990,6 +2990,29 @@ async function cargarReporteInasistencias() {
         else if (mes === 11) dic += valorFalta;
       });
 
+      const pctInasistenciaAnual = ((totalAnual / DIAS_CLASE_ANUALES) * 100).toFixed(1);
+
+      return {
+        id: al.id,
+        nombre: al.nombre_apellido || al.nombre || 'Sin nombre',
+        cursoDiv: al.curso_division || '-',
+        t1,
+        t2,
+        t3,
+        dic,
+        totalAnual,
+        pctInasistenciaAnual
+      };
+    });
+
+    // Renderizar la tabla aplicando los filtros de trimestre y búsqueda
+    filtrarReporteTrimestralJS();
+
+  } catch (err) {
+    console.error("Error al cargar reporte:", err);
+    tbody.innerHTML = `<tr><td colspan="6" style="text-align: center; color: red; padding: 15px;">Error: ${err.message}</td></tr>`;
+  }
+}
       const pctInasistenciaAnual = ((totalAnual / DIAS_CLASE_ANUALES) * 100).toFixed(1);
 
       return {
