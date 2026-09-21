@@ -2484,42 +2484,152 @@ async function moverAlumno(alumnoId, nuevoAnio, nuevaSeccion) {
   }
 }
 
+// Cargar la tabla ABM de Estudiantes con ordenamiento en JS y botones completos
 async function cargarTablaGestionAlumnos() {
+  console.log("🔄 Cargando la tabla de gestión de alumnos...");
+
   const tbody = document.querySelector('#tablaGestionAlumnos tbody');
   if (!tbody) return;
 
-  const { data: alumnos, error } = await supabaseClient
+  tbody.innerHTML = '<tr><td colspan="6" style="text-align: center; padding: 12px;">Cargando estudiantes...</td></tr>';
+
+  try {
+    const cliente = typeof supabaseClient !== 'undefined' ? supabaseClient : supabase;
+
+    // Traemos todos los registros sin .order() en la consulta SQL para evitar el error 400
+    const { data: alumnos, error } = await cliente
+      .from('alumnos')
+      .select('*');
+
+    if (error) {
+      console.error("❌ Error de Supabase:", error);
+      tbody.innerHTML = `<tr><td colspan="6" style="text-align: center; color: red;">Error: ${error.message}</td></tr>`;
+      return;
+    }
+
+    if (!alumnos || alumnos.length === 0) {
+      tbody.innerHTML = '<tr><td colspan="6" style="text-align: center; color: #64748b;">No hay estudiantes registrados.</td></tr>';
+      return;
+    }
+
+    // Ordenamos en JS por curso/división y luego por nombre
+    alumnos.sort((a, b) => {
+      const cursoA = a.curso_division || a.curso || '';
+      const cursoB = b.curso_division || b.curso || '';
+      const compCurso = cursoA.localeCompare(cursoB, 'es', { numeric: true });
+      if (compCurso !== 0) return compCurso;
+
+      const nombreA = a.nombre_apellido || '';
+      const nombreB = b.nombre_apellido || '';
+      return nombreA.localeCompare(nombreB, 'es');
+    });
+
+    tbody.innerHTML = '';
+    alumnos.forEach(al => {
+      const curso = al.curso_division || al.curso || '-';
+      const telefono = al.teléfono || al.telefono || '-';
+      const dni = al.dni || '-';
+
+      const tr = document.createElement('tr');
+      tr.style.borderBottom = '1px solid #e2e8f0';
+
+      tr.innerHTML = `
+        <td style="padding: 8px;"><input type="checkbox" class="check-alumno-gestion" value="${al.id}"></td>
+        <td style="padding: 8px;">${dni}</td>
+        <td style="padding: 8px;"><strong>${al.nombre_apellido || 'Sin nombre'}</strong></td>
+        <td style="padding: 8px;">${curso}</td>
+        <td style="padding: 8px;">${telefono}</td>
+        <td style="padding: 8px; text-align: center; white-space: nowrap;">
+          <button onclick="editarAlumno('${al.id}', '${(al.nombre_apellido || '').replace(/'/g, "\\'")}', '${dni === '-' ? '' : dni}', '${telefono === '-' ? '' : telefono}')" 
+                  style="background: #f59e0b; color: white; border: none; padding: 5px 10px; border-radius: 4px; cursor: pointer; font-size: 12px; margin-right: 4px;">
+            ✏️ Editar
+          </button>
+          <button onclick="promptMoverAlumno('${al.id}', '${curso}')" 
+                  style="background: #0284c7; color: white; border: none; padding: 5px 10px; border-radius: 4px; cursor: pointer; font-size: 12px; margin-right: 4px;">
+            🔀 Mover
+          </button>
+          <button onclick="eliminarAlumnoIndividual('${al.id}', '${(al.nombre_apellido || '').replace(/'/g, "\\'")}')" 
+                  style="background: #ef4444; color: white; border: none; padding: 5px 10px; border-radius: 4px; cursor: pointer; font-size: 12px;">
+            🗑️ Eliminar
+          </button>
+        </td>
+      `;
+      tbody.appendChild(tr);
+    });
+
+  } catch (err) {
+    console.error("❌ Error inesperado:", err);
+  }
+}
+
+// Función para editar Nombre, DNI y Teléfono de un estudiante
+async function editarAlumno(id, nombreActual, dniActual, telefonoActual) {
+  const nuevoNombre = prompt("Modificar Nombre y Apellido:", nombreActual);
+  if (nuevoNombre === null) return;
+
+  const nuevoDni = prompt("Modificar o ingresar DNI:", dniActual);
+  if (nuevoDni === null) return;
+
+  const nuevoTelefono = prompt("Modificar N° de Teléfono / Contacto:", telefonoActual);
+  if (nuevoTelefono === null) return;
+
+  const payload = {
+    nombre_apellido: nuevoNombre.trim().toUpperCase(),
+    dni: nuevoDni.trim() || null,
+    teléfono: nuevoTelefono.trim() || null
+  };
+
+  const cliente = typeof supabaseClient !== 'undefined' ? supabaseClient : supabase;
+
+  const { error } = await cliente
     .from('alumnos')
-    .select('*')
-    .order('curso', { ascending: true })
-    .order('nombre_apellido', { ascending: true });
+    .update(payload)
+    .eq('id', id);
 
-  if (error) return;
+  if (error) {
+    console.error("Error al actualizar estudiante:", error);
+    alert("Error al actualizar los datos: " + error.message);
+  } else {
+    alert("✅ Datos actualizados con éxito.");
+    cargarTablaGestionAlumnos();
+    if (typeof cargarAlumnosDesdeSupabase === 'function') {
+      cargarAlumnosDesdeSupabase();
+    }
+  }
+}
 
-  tbody.innerHTML = '';
-  alumnos.forEach(al => {
-    const tr = document.createElement('tr');
-    tr.setAttribute('data-curso', al.curso);
-    tr.innerHTML = `
-      <td><input type="checkbox" class="check-alumno-gestion" value="${al.id}"></td>
-      <td><strong>${al.nombre_apellido}</strong></td>
-      <td>${al.curso}</td>
-      <td>${al.telefono || '-'}</td>
-      <td>
-        <button onclick="promptMoverAlumno('${al.id}', '${al.curso}')" style="background: #0284c7; color: white; border: none; padding: 4px 8px; border-radius: 4px; cursor: pointer; font-size: 12px;">
-          🔀 Mover Curso
-        </button>
-      </td>
-    `;
-    tbody.appendChild(tr);
-  });
+// Función para eliminar un estudiante individualmente
+async function eliminarAlumnoIndividual(id, nombre) {
+  if (!confirm(`¿Estás seguro de que querés eliminar permanentemente a "${nombre}"?`)) {
+    return;
+  }
+
+  const cliente = typeof supabaseClient !== 'undefined' ? supabaseClient : supabase;
+
+  const { error } = await cliente
+    .from('alumnos')
+    .delete()
+    .eq('id', id);
+
+  if (error) {
+    console.error("Error al eliminar estudiante:", error);
+    alert("No se pudo eliminar el registro: " + error.message);
+  } else {
+    alert("🗑️ Estudiante eliminado correctamente.");
+    cargarTablaGestionAlumnos();
+    if (typeof cargarAlumnosDesdeSupabase === 'function') {
+      cargarAlumnosDesdeSupabase();
+    }
+  }
 }
 
 function promptMoverAlumno(id, cursoActual) {
   const nuevoCurso = prompt("Ingresá el nuevo curso y división (Ej: 1° 4ª):", cursoActual);
   if (nuevoCurso && nuevoCurso !== cursoActual) {
     const partes = nuevoCurso.split(' ');
-    moverAlumno(id, partes[0], partes[1] || '1ª');
+    if (typeof moverAlumno === 'function') {
+      moverAlumno(id, partes[0], partes[1] || '1ª');
+    }
   }
 }
 
@@ -2534,7 +2644,9 @@ async function cargarTablaUsuarios() {
 
   tbody.innerHTML = '<tr><td colspan="5" style="text-align: center; padding: 15px;">Cargando usuarios...</td></tr>';
 
-  const { data: perfiles, error } = await supabaseClient
+  const cliente = typeof supabaseClient !== 'undefined' ? supabaseClient : supabase;
+
+  const { data: perfiles, error } = await cliente
     .from('profiles')
     .select('*')
     .order('created_at', { ascending: false });
@@ -2581,8 +2693,7 @@ async function cargarTablaUsuarios() {
     tbody.appendChild(tr);
   });
 }
-
-async function cambiarEstadoUsuario(idUsuario, nuevoEstado) {
+  async function cambiarEstadoUsuario(idUsuario, nuevoEstado) {
   try {
     const { error } = await supabaseClient
       .from('profiles')
