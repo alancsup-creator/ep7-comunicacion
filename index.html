@@ -2939,14 +2939,14 @@ document.addEventListener('DOMContentLoaded', () => {
 // 2. Función que consulta la base de datos y arma el listado base
 async function cargarReporteInasistencias() {
   const tbody = document.getElementById('tbodyConsultaInasistencias');
-  if (!tbody) return;
+  if (!tbody) return; // Este return es válido porque está dentro de la función
 
   tbody.innerHTML = '<tr><td colspan="6" style="text-align: center; padding: 20px;">Cargando reporte de inasistencias...</td></tr>';
 
   try {
     const cliente = typeof supabaseClient !== 'undefined' ? supabaseClient : supabase;
 
-    // Obtener la clave combinada (ej: "1° 1ª") usando la función existente
+    // Obtener la clave combinada (ej: "1° 1ª")
     const cursoClave = typeof obtenerCursoSeleccionado === 'function' ? obtenerCursoSeleccionado() : '';
 
     // Consultar alumnos filtrados por la columna 'curso_division'
@@ -2972,10 +2972,10 @@ async function cargarReporteInasistencias() {
       const faltas = (registrosInasistencias || []).filter(i => String(i.alumno_id) === String(al.id));
 
       let totalAnual = 0;
-      let t1 = 0;  // Mar, Abr, May (Meses 2, 3, 4)
-      let t2 = 0;  // Jun, Jul, Ago (Meses 5, 6, 7)
-      let t3 = 0;  // Sep, Oct, Nov (Meses 8, 9, 10)
-      let dic = 0; // Diciembre (Mes 11)
+      let t1 = 0;  // Mar, Abr, May
+      let t2 = 0;  // Jun, Jul, Ago
+      let t3 = 0;  // Sep, Oct, Nov
+      let dic = 0; // Diciembre
 
       faltas.forEach(reg => {
         const fecha = new Date(reg.fecha);
@@ -3005,38 +3005,17 @@ async function cargarReporteInasistencias() {
       };
     });
 
-    // Renderizar la tabla aplicando los filtros de trimestre y búsqueda
-    filtrarReporteTrimestralJS();
+    // Renderizar la tabla aplicando los filtros
+    if (typeof filtrarReporteTrimestralJS === 'function') {
+      filtrarReporteTrimestralJS();
+    }
 
   } catch (err) {
     console.error("Error al cargar reporte:", err);
     tbody.innerHTML = `<tr><td colspan="6" style="text-align: center; color: red; padding: 15px;">Error: ${err.message}</td></tr>`;
   }
-}
-      const pctInasistenciaAnual = ((totalAnual / DIAS_CLASE_ANUALES) * 100).toFixed(1);
-
-      return {
-        id: al.id,
-        nombre: al.nombre_apellido || 'Sin nombre',
-        cursoDiv: `${al.curso || ''} ${al.division || ''}`.trim() || '-',
-        t1,
-        t2,
-        t3,
-        dic,
-        totalAnual,
-        pctInasistenciaAnual
-      };
-    });
-
-    // Renderizar la tabla con los filtros seleccionados
-    filtrarReporteTrimestralJS();
-
-  } catch (err) {
-    console.error("Error al cargar reporte:", err);
-    tbody.innerHTML = `<tr><td colspan="6" style="text-align: center; color: red; padding: 15px;">Error: ${err.message}</td></tr>`;
-  }
-}
-
+} // <--- ASEGURATE DE QUE ESTA LLAVE CIERRE LA FUNCIÓN AQUÍ
+  
 // 3. FUNCIÓN NUEVA: Filtra instantáneamente la tabla sin volver a consultar a Supabase
 function filtrarReporteTrimestralJS() {
   const tbody = document.getElementById('tbodyConsultaInasistencias');
