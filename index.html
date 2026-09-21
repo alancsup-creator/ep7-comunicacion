@@ -2246,7 +2246,6 @@ async function cargarAcumuladoAnual() {
 
   const anio = mesSeleccionado.split('-')[0];
 
-  // 1. Traer todos los registros del año activo desde Supabase
   const { data, error } = await supabaseClient
     .from('inasistencias_alumnos')
     .select('alumno_id, faltas, dias_clase, mes')
@@ -2257,62 +2256,48 @@ async function cargarAcumuladoAnual() {
     return;
   }
 
-  // 2. Mapa para sumar las faltas por alumno
   const acumuladosFaltas = {};
+  const acumuladosDiasClase = {};
 
-  if (data && data.length > 0) {
+  if (data) {
     data.forEach(rec => {
       const id = rec.alumno_id;
       const faltas = parseFloat(rec.faltas) || 0;
+      const dias = parseInt(rec.dias_clase) || 20;
 
-      // Sumar faltas del historial en Supabase
       acumuladosFaltas[id] = (acumuladosFaltas[id] || 0) + faltas;
+      acumuladosDiasClase[id] = (acumuladosDiasClase[id] || 0) + dias;
     });
   }
 
   const listaSeguimiento = [];
 
-  // 3. Recorrer cada fila visible en la tabla
   document.querySelectorAll('#tablaInasistencias tbody tr').forEach(fila => {
     const alumnoId = fila.getAttribute('data-alumno-id');
     const curso = fila.getAttribute('data-curso') || '';
     const alumnoNombre = fila.children[1] ? fila.children[1].innerText.trim() : '';
 
-    const inputFaltasMes = fila.querySelector('.input-faltas');
     const celdaAcumulado = fila.querySelector('.total-anual-acumulado');
     const celdaPctAnual = fila.querySelector('.porcentaje-anual');
     const celdaEstado = fila.querySelector('.estado-asistencia');
 
-    // Faltas del mes actual directo del input en pantalla
-    const faltasMesActual = parseFloat(inputFaltasMes?.value) || 0;
+    const totalFaltasAnio = acumuladosFaltas[alumnoId] || 0;
+    const totalDiasEscolares = acumuladosDiasClase[alumnoId] || 20;
 
-    // Faltas históricas guardadas en Supabase (si existen)
-    const faltasHistoricas = acumuladosFaltas[alumnoId] || 0;
+    const asistenciasAnio = Math.max(0, totalDiasEscolares - totalFaltasAnio);
+    const pctAsistenciaAnual = totalDiasEscolares > 0 ? Math.round((asistenciasAnio / totalDiasEscolares) * 100) : 100;
 
-    // Si el mes actual ya se guardó en Supabase, evitamos duplicar sumando las faltas históricas directo
-    // Total acumulado anual de faltas:
-    const totalFaltasAnio = faltasHistoricas;
-
-    // Días hábiles base del año (ejemplo estimado de 180 días o la suma de meses)
-    // Ajustado según días del curso o promedio mensual (20 días * cantidad de meses transcurridos)
-    const diasMesLocal = parseInt(fila.getAttribute('data-dias-clase')) || 20;
-    
-    // Asistencia y porcentaje anual respecto a los días evaluados
-    const pctInasistenciaAnual = diasMesLocal > 0 ? Math.round((totalFaltasAnio / (diasMesLocal * 9)) * 100) : 0;
-    const pctAsistenciaAnual = Math.max(0, 100 - pctInasistenciaAnual);
-
-    // Actualizar pantalla
     if (celdaAcumulado) celdaAcumulado.innerText = totalFaltasAnio;
     if (celdaPctAnual) celdaPctAnual.innerText = `${pctAsistenciaAnual}%`;
 
-    // Estado institucional
     let estadoHTML = '';
     let estadoTexto = 'Regular';
 
-    if (pctAsistenciaAnual < 70) {
+    // Criterio Institucional: Alerta con 15 o más faltas acumuladas (o <75% asistencia)
+    if (totalFaltasAnio >= 15 || pctAsistenciaAnual < 75) {
       estadoTexto = 'Alerta';
       estadoHTML = `<span style="background: #fef2f2; color: #dc2626; border: 1px solid #fca5a5; padding: 3px 8px; border-radius: 12px; font-size: 12px; font-weight: bold;">🚨 Alerta</span>`;
-    } else if (pctAsistenciaAnual >= 70 && pctAsistenciaAnual < 80) {
+    } else if (totalFaltasAnio >= 10 || (pctAsistenciaAnual >= 75 && pctAsistenciaAnual < 85)) {
       estadoTexto = 'Riesgo';
       estadoHTML = `<span style="background: #fffbe3; color: #b45309; border: 1px solid #fde68a; padding: 3px 8px; border-radius: 12px; font-size: 12px; font-weight: bold;">⚠️ Riesgo</span>`;
     } else {
@@ -2333,8 +2318,11 @@ async function cargarAcumuladoAnual() {
     }
   });
 
-  poblarTablaSeguimiento(listaSeguimiento);
-}// 9. Renderizar tabla de seguimiento prioritario
+  if (typeof poblarTablaSeguimiento === 'function') {
+    poblarTablaSeguimiento(listaSeguimiento);
+  }
+}
+  // 9. Renderizar tabla de seguimiento prioritario
 function poblarTablaSeguimiento(lista) {
   const tbodySeguimiento = document.querySelector('#tablaSeguimientoAlumnos tbody');
   const badge = document.getElementById('badgeContadorAlerta');
@@ -2951,17 +2939,14 @@ document.addEventListener('DOMContentLoaded', () => {
 // 2. Función que consulta la base de datos y arma el listado base
 async function cargarReporteInasistencias() {
   const tbody = document.getElementById('tbodyConsultaInasistencias');
-  if (!tbody) return; // Este return es válido porque está dentro de la función
+  if (!tbody) return;
 
   tbody.innerHTML = '<tr><td colspan="6" style="text-align: center; padding: 20px;">Cargando reporte de inasistencias...</td></tr>';
 
   try {
     const cliente = typeof supabaseClient !== 'undefined' ? supabaseClient : supabase;
-
-    // Obtener la clave combinada (ej: "1° 1ª")
     const cursoClave = typeof obtenerCursoSeleccionado === 'function' ? obtenerCursoSeleccionado() : '';
 
-    // Consultar alumnos filtrados por la columna 'curso_division'
     let queryAlumnos = cliente.from('alumnos').select('*');
     if (cursoClave) {
       queryAlumnos = queryAlumnos.eq('curso_division', cursoClave);
@@ -2970,54 +2955,52 @@ async function cargarReporteInasistencias() {
     const { data: alumnos, error: errAlumnos } = await queryAlumnos;
     if (errAlumnos) throw errAlumnos;
 
-    // Consultar todas las inasistencias
     const { data: registrosInasistencias, error: errInasistencias } = await cliente
       .from('inasistencias_alumnos')
       .select('*');
 
     if (errInasistencias) throw errInasistencias;
 
-    const DIAS_CLASE_ANUALES = 180; // Días base para cálculo de % anual
-
-    // Armar estructura agrupada por alumno
     listaAlumnosReporteInasistencias = (alumnos || []).map(al => {
-      const faltas = (registrosInasistencias || []).filter(i => String(i.alumno_id) === String(al.id));
+      // Generar la clave al_... para cruzar con inasistencias_alumnos
+      const alumnoKey = `al_${(al.nombre_apellido || '').toLowerCase().replace(/[^a-z0-9]/g, '_')}`;
+      
+      const faltas = (registrosInasistencias || []).filter(i => 
+        String(i.alumno_id) === alumnoKey || String(i.alumno_id) === String(al.id)
+      );
 
       let totalAnual = 0;
-      let t1 = 0;  // Mar, Abr, May
-      let t2 = 0;  // Jun, Jul, Ago
-      let t3 = 0;  // Sep, Oct, Nov
-      let dic = 0; // Diciembre
+      let t1 = 0, t2 = 0, t3 = 0, dic = 0;
+      let totalDiasClase = 0;
 
       faltas.forEach(reg => {
-        const fecha = new Date(reg.fecha);
-        const mes = fecha.getMonth();
-        const valorFalta = parseFloat(reg.cantidad || reg.valor || 1);
+        const valorFalta = parseFloat(reg.faltas || reg.cantidad || 0);
+        const diasClaseMes = parseInt(reg.dias_clase || 20);
+        const mesStr = String(reg.mes || '');
 
         totalAnual += valorFalta;
+        totalDiasClase += diasClaseMes;
 
-        if (mes >= 2 && mes <= 4) t1 += valorFalta;
-        else if (mes >= 5 && mes <= 7) t2 += valorFalta;
-        else if (mes >= 8 && mes <= 10) t3 += valorFalta;
-        else if (mes === 11) dic += valorFalta;
+        if (mesStr.endsWith('-03') || mesStr.endsWith('-04') || mesStr.endsWith('-05')) t1 += valorFalta;
+        else if (mesStr.endsWith('-06') || mesStr.endsWith('-07') || mesStr.endsWith('-08')) t2 += valorFalta;
+        else if (mesStr.endsWith('-09') || mesStr.endsWith('-10') || mesStr.endsWith('-11')) t3 += valorFalta;
+        else if (mesStr.endsWith('-12')) dic += valorFalta;
       });
 
-      const pctInasistenciaAnual = ((totalAnual / DIAS_CLASE_ANUALES) * 100).toFixed(1);
+      const diasBaseCalc = totalDiasClase > 0 ? totalDiasClase : 20;
+      const asistenciasCalc = Math.max(0, diasBaseCalc - totalAnual);
+      const pctAsistenciaAnual = Math.round((asistenciasCalc / diasBaseCalc) * 100);
 
       return {
         id: al.id,
-        nombre: al.nombre_apellido || al.nombre || 'Sin nombre',
-        cursoDiv: al.curso_division || '-',
-        t1,
-        t2,
-        t3,
-        dic,
+        nombre: al.nombre_apellido || 'Sin nombre',
+        cursoDiv: al.curso_division || al.curso || '-',
+        t1, t2, t3, dic,
         totalAnual,
-        pctInasistenciaAnual
+        pctAsistenciaAnual
       };
     });
 
-    // Renderizar la tabla aplicando los filtros
     if (typeof filtrarReporteTrimestralJS === 'function') {
       filtrarReporteTrimestralJS();
     }
@@ -3026,9 +3009,8 @@ async function cargarReporteInasistencias() {
     console.error("Error al cargar reporte:", err);
     tbody.innerHTML = `<tr><td colspan="6" style="text-align: center; color: red; padding: 15px;">Error: ${err.message}</td></tr>`;
   }
-} // <--- ASEGURATE DE QUE ESTA LLAVE CIERRE LA FUNCIÓN AQUÍ
-  
-// 3. FUNCIÓN NUEVA: Filtra instantáneamente la tabla sin volver a consultar a Supabase
+}
+  // 3. FUNCIÓN NUEVA: Filtra instantáneamente la tabla sin volver a consultar a Supabase
 function filtrarReporteTrimestralJS() {
   const tbody = document.getElementById('tbodyConsultaInasistencias');
   if (!tbody) return;
