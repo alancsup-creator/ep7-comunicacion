@@ -2011,23 +2011,39 @@ function obtenerCursoSeleccionado() {
 
 // Evento al cambiar de Año o División en los desplegables
 function alCambiarFiltroOCurso() {
+  // 1. Filtrar la tabla de la planilla de carga
   filtrarTablaInasistencias();
   
+  // 2. Actualizar los días hábiles configurados
   const cursoClave = obtenerCursoSeleccionado();
   const inputDias = document.getElementById('diasClaseMes');
   
   if (inputDias) {
-    // Carga los días configurados específicamente para este curso o pone 20 por defecto
     inputDias.value = diasHabilesPorCurso[cursoClave] || 20;
+  }
+
+  // 3. Si la subpestaña Consulta está visible, recargar sus datos con el nuevo curso
+  const divConsulta = document.getElementById('subTabConsultaInasistencias');
+  if (divConsulta && divConsulta.style.display !== 'none') {
+    if (typeof cargarReporteInasistencias === 'function') {
+      cargarReporteInasistencias();
+    }
+  }
+
+  // 4. Si la subpestaña Alerta está visible, recargar sus alertas
+  const divAlerta = document.getElementById('subTabAlertaInasistencias');
+  if (divAlerta && divAlerta.style.display !== 'none') {
+    if (typeof procesarAlertasInasistencias === 'function') {
+      procesarAlertasInasistencias();
+    }
   }
 }
 
-// 2. Evento al modificar los días hábiles en el input
+// Evento al modificar los días hábiles en el input
 function actualizarDiasHabilesDelCursoActual() {
   const cursoClave = obtenerCursoSeleccionado();
   const inputDias = document.getElementById('diasClaseMes');
   const nuevosDias = parseInt(inputDias.value) || 20;
-
   // Guardamos en el diccionario del curso actual
   if (cursoClave) {
     diasHabilesPorCurso[cursoClave] = nuevosDias;
