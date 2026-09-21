@@ -473,148 +473,216 @@
   </section>
   
 <!-- Pestaña 3: Inasistencias y Seguimiento -->
-  <section id="inasistencias" class="tab-content" style="display: none;">
-    <h2>📅 Registro y Control Institucional de Asistencia</h2>
+<section id="inasistencias" class="tab-content" style="display: none;">
+  <h2>📅 Registro y Control Institucional de Asistencia</h2>
 
-    <!-- Encabezado y Filtros de Selección por Año, División y Días Hábiles -->
-    <div style="background: white; border-radius: 12px; padding: 16px; margin-bottom: 16px; box-shadow: 0 1px 3px rgba(0,0,0,0.1);">
+  <!-- Encabezado y Filtros Generales para la Planilla de Carga -->
+  <div id="panelFiltrosCarga" style="background: white; border-radius: 12px; padding: 16px; margin-bottom: 16px; box-shadow: 0 1px 3px rgba(0,0,0,0.1);">
+    
+    <div style="display: flex; gap: 12px; flex-wrap: wrap; align-items: flex-end; margin-bottom: 16px;">
       
-      <div style="display: flex; gap: 12px; flex-wrap: wrap; align-items: flex-end; margin-bottom: 16px;">
-        
-        <!-- Selección de Mes -->
-<div style="flex: 1; min-width: 130px;">
-  <label style="font-size: 12px; font-weight: bold; color: #475569;">Mes a Registrar:</label>
-  <input 
-    type="month" 
-    id="mesInasistencias" 
-    value="2026-03"
-    onchange="cambiarMesInasistencias()" 
-    style="width: 100%; padding: 8px; font-size: 14px; border: 1px solid #cbd5e1; border-radius: 6px;"
-  >
-</div>
-
-<!-- Desplegable para seleccionar Año -->
-<div style="flex: 1; min-width: 130px;">
-  <label style="font-size: 12px; font-weight: bold; color: #475569;">Año:</label>
-  <select id="selectAnioInasistencias" onchange="alCambiarFiltroOCurso()" style="width: 100%; padding: 8px; font-size: 14px; border: 1px solid #cbd5e1; border-radius: 6px; font-weight: 600;">
-    <option value="">Seleccionar Año...</option>
-    <option value="1°" selected>1° Año</option>
-    <option value="2°">2° Año</option>
-    <option value="3°">3° Año</option>
-    <option value="4°">4° Año</option>
-    <option value="5°">5° Año</option>
-    <option value="6°">6° Año</option>
-  </select>
-</div>
-
-<!-- Desplegable para seleccionar División / Sección -->
-<div style="flex: 1; min-width: 130px;">
-  <label style="font-size: 12px; font-weight: bold; color: #475569;">División / Sección:</label>
-  <select id="selectSeccionInasistencias" onchange="alCambiarFiltroOCurso()" style="width: 100%; padding: 8px; font-size: 14px; border: 1px solid #cbd5e1; border-radius: 6px; font-weight: 600;">
-    <option value="">Seleccionar División...</option>
-    <option value="1ª" selected>1ª Sección (1°)</option>
-    <option value="2ª">2ª Sección (2°)</option>
-    <option value="3ª">3ª Sección (3°)</option>
-    <option value="4ª">4ª Sección (4°)</option>
-  </select>
-</div>
-
-<!-- Entrada de Días Hábiles por Mes para el curso seleccionado -->
-<div style="width: 160px;">
-  <label style="font-size: 12px; font-weight: bold; color: #1e3a8a;">Días Hábiles del Curso:</label>
-  <input 
-    type="number" 
-    id="diasClaseMes" 
-    value="20" 
-    min="1" 
-    max="31" 
-    onchange="actualizarDiasHabilesDelCursoActual()" 
-    style="width: 100%; padding: 8px; font-size: 14px; border: 2px solid #0284c7; border-radius: 6px; text-align: center; font-weight: bold; background-color: #f0f9ff;"
-  >
-</div>
+      <!-- Selección de Mes -->
+      <div style="flex: 1; min-width: 130px;">
+        <label style="font-size: 12px; font-weight: bold; color: #475569;">Mes a Registrar:</label>
+        <input 
+          type="month" 
+          id="mesInasistencias" 
+          value="2026-03"
+          onchange="cambiarMesInasistencias()" 
+          style="width: 100%; padding: 8px; font-size: 14px; border: 1px solid #cbd5e1; border-radius: 6px;"
+        >
       </div>
 
-      <!-- Navegación por Sub-pestañas -->
-      <div style="display: flex; gap: 8px; border-bottom: 2px solid #e2e8f0; margin-top: 10px;">
-        <button 
-          id="btnSubTabPlanilla" 
-          onclick="cambiarSubPestanaInasistencias('planilla')" 
-          style="padding: 10px 16px; font-weight: bold; font-size: 14px; border: none; background: none; border-bottom: 3px solid #2563eb; color: #2563eb; cursor: pointer;"
-        >
-          📋 Planilla de Carga
-        </button>
-
-        <button 
-          id="btnSubTabAlerta" 
-          onclick="cambiarSubPestanaInasistencias('alerta')" 
-          style="padding: 10px 16px; font-weight: bold; font-size: 14px; border: none; background: none; border-bottom: 3px solid transparent; color: #64748b; cursor: pointer; display: flex; align-items: center; gap: 6px;"
-        >
-          🚨 Casos de Riesgo / Alerta
-          <span id="badgeContadorAlerta" style="background: #ef4444; color: white; border-radius: 10px; padding: 2px 7px; font-size: 11px; font-weight: bold; display: none;">0</span>
-        </button>
+      <!-- Desplegable para seleccionar Año -->
+      <div style="flex: 1; min-width: 130px;">
+        <label style="font-size: 12px; font-weight: bold; color: #475569;">Año:</label>
+        <select id="selectAnioInasistencias" onchange="alCambiarFiltroOCurso()" style="width: 100%; padding: 8px; font-size: 14px; border: 1px solid #cbd5e1; border-radius: 6px; font-weight: 600;">
+          <option value="">Seleccionar Año...</option>
+          <option value="1°" selected>1° Año</option>
+          <option value="2°">2° Año</option>
+          <option value="3°">3° Año</option>
+          <option value="4°">4° Año</option>
+          <option value="5°">5° Año</option>
+          <option value="6°">6° Año</option>
+        </select>
       </div>
 
+      <!-- Desplegable para seleccionar División / Sección -->
+      <div style="flex: 1; min-width: 130px;">
+        <label style="font-size: 12px; font-weight: bold; color: #475569;">División / Sección:</label>
+        <select id="selectSeccionInasistencias" onchange="alCambiarFiltroOCurso()" style="width: 100%; padding: 8px; font-size: 14px; border: 1px solid #cbd5e1; border-radius: 6px; font-weight: 600;">
+          <option value="">Seleccionar División...</option>
+          <option value="1ª" selected>1ª Sección (1°)</option>
+          <option value="2ª">2ª Sección (2°)</option>
+          <option value="3ª">3ª Sección (3°)</option>
+          <option value="4ª">4ª Sección (4°)</option>
+        </select>
+      </div>
+
+      <!-- Entrada de Días Hábiles por Mes para el curso seleccionado -->
+      <div style="width: 160px;">
+        <label style="font-size: 12px; font-weight: bold; color: #1e3a8a;">Días Hábiles del Curso:</label>
+        <input 
+          type="number" 
+          id="diasClaseMes" 
+          value="20" 
+          min="1" 
+          max="31" 
+          onchange="actualizarDiasHabilesDelCursoActual()" 
+          style="width: 100%; padding: 8px; font-size: 14px; border: 2px solid #0284c7; border-radius: 6px; text-align: center; font-weight: bold; background-color: #f0f9ff;"
+        >
+      </div>
     </div>
 
-    <!-- SUB-PESTAÑA 1: PLANILLA DE REGISTRO COMPLETO -->
-    <div id="subTabPlanillaInasistencias">
-      <div class="table-responsive" style="background: white; border-radius: 12px; padding: 12px; box-shadow: 0 1px 3px rgba(0,0,0,0.1);">
-        <table id="tablaInasistencias" class="control-table" style="width: 100%;">
+    <!-- Navegación por Sub-pestañas -->
+    <div style="display: flex; gap: 8px; border-bottom: 2px solid #e2e8f0; margin-top: 10px; flex-wrap: wrap;">
+      <button 
+        id="btnSubTabPlanilla" 
+        onclick="cambiarSubPestanaInasistencias('planilla')" 
+        style="padding: 10px 16px; font-weight: bold; font-size: 14px; border: none; background: none; border-bottom: 3px solid #2563eb; color: #2563eb; cursor: pointer;"
+      >
+        📋 Planilla de Carga
+      </button>
+
+      <button 
+        id="btnSubTabConsulta" 
+        onclick="cambiarSubPestanaInasistencias('consulta')" 
+        style="padding: 10px 16px; font-weight: bold; font-size: 14px; border: none; background: none; border-bottom: 3px solid transparent; color: #64748b; cursor: pointer;"
+      >
+        📊 Consulta y Trimestres
+      </button>
+
+      <button 
+        id="btnSubTabAlerta" 
+        onclick="cambiarSubPestanaInasistencias('alerta')" 
+        style="padding: 10px 16px; font-weight: bold; font-size: 14px; border: none; background: none; border-bottom: 3px solid transparent; color: #64748b; cursor: pointer; display: flex; align-items: center; gap: 6px;"
+      >
+        🚨 Casos de Riesgo / Alerta
+        <span id="badgeContadorAlerta" style="background: #ef4444; color: white; border-radius: 10px; padding: 2px 7px; font-size: 11px; font-weight: bold; display: none;">0</span>
+      </button>
+    </div>
+
+  </div>
+
+  <!-- SUB-PESTAÑA 1: PLANILLA DE REGISTRO COMPLETO (Tu vista original) -->
+  <div id="subTabPlanillaInasistencias">
+    <div class="table-responsive" style="background: white; border-radius: 12px; padding: 12px; box-shadow: 0 1px 3px rgba(0,0,0,0.1);">
+      <table id="tablaInasistencias" class="control-table" style="width: 100%;">
+        <thead>
+          <tr>
+            <th>Curso / Sec.</th>
+            <th>Alumno</th>
+            <th style="width: 120px; text-align: center;">Inasistencias</th>
+            <th style="width: 100px; text-align: center;">Asist. Mes</th>
+            <th style="width: 130px; text-align: center;">% de inasistencia</th>
+            <th style="width: 120px; text-align: center; background-color: #fef3c7; color: #92400e; border-left: 2px solid #f59e0b; border-right: 1px solid #fde68a;">📊 Acum. Anual</th>
+            <th style="width: 100px; text-align: center; background-color: #fffbe3; color: #78350f;">% Anual</th>
+            <th style="width: 120px; text-align: center;">Estado</th>
+          </tr>
+        </thead>
+        <tbody id="tbodyInasistencias">
+          <!-- Datos renderizados dinámicamente -->
+        </tbody>
+      </table>
+    </div>
+  </div>
+
+  <!-- SUB-PESTAÑA 2: VISUALIZACIÓN Y REPORTE POR TRIMESTRES (NUEVA) -->
+  <div id="subTabConsultaInasistencias" style="display: none;">
+    <div style="background: white; border-radius: 12px; padding: 16px; box-shadow: 0 1px 3px rgba(0,0,0,0.1);">
+      
+      <!-- Panel de Filtros Específicos para Consulta -->
+      <div style="display: flex; gap: 12px; flex-wrap: wrap; align-items: flex-end; margin-bottom: 16px; background: #f8fafc; padding: 12px; border-radius: 8px; border: 1px solid #e2e8f0;">
+        
+        <!-- Filtro Periodo Lectivo / Trimestres -->
+        <div style="flex: 1.5; min-width: 200px;">
+          <label style="font-size: 12px; font-weight: bold; color: #475569; display: block; margin-bottom: 4px;">Periodo / Trimestre:</label>
+          <select id="filtroTrimestreConsulta" onchange="filtrarReporteTrimestralJS()" style="width: 100%; padding: 8px; font-size: 14px; border: 1px solid #cbd5e1; border-radius: 6px; font-weight: 600;">
+            <option value="anual">📅 Acumulado Anual</option>
+            <option value="t1">1er Trimestre (Marzo - Mayo)</option>
+            <option value="t2">2do Trimestre (Junio - Agosto)</option>
+            <option value="t3">3er Trimestre (Septiembre - Noviembre)</option>
+            <option value="dic">❄️ Diciembre (Solo)</option>
+          </select>
+        </div>
+
+        <!-- Búsqueda por Nombre o Apellido -->
+        <div style="flex: 2; min-width: 220px;">
+          <label style="font-size: 12px; font-weight: bold; color: #475569; display: block; margin-bottom: 4px;">Buscar Estudiante:</label>
+          <input 
+            type="text" 
+            id="inputBuscarAlumnoConsulta" 
+            onkeyup="filtrarReporteTrimestralJS()" 
+            placeholder="🔍 Nombre o Apellido..." 
+            style="width: 100%; padding: 8px; font-size: 14px; border: 1px solid #cbd5e1; border-radius: 6px;"
+          >
+        </div>
+
+        <div style="margin-left: auto;">
+          <button onclick="cargarReporteInasistencias()" style="background: #0284c7; color: white; border: none; padding: 9px 16px; border-radius: 6px; font-weight: bold; cursor: pointer;">
+            🔄 Actualizar Datos
+          </button>
+        </div>
+      </div>
+
+      <!-- Tabla de Visualización -->
+      <div class="table-responsive">
+        <table id="tablaConsultaInasistencias" class="control-table" style="width: 100%;">
           <thead>
-            <tr>
+            <tr style="background-color: #f1f5f9;">
               <th>Curso / Sec.</th>
-              <th>Alumno</th>
-              <th style="width: 120px; text-align: center;">Inasistencias</th>
-              <th style="width: 100px; text-align: center;">Asist. Mes</th>
-              <th style="width: 130px; text-align: center;">% de inasistencia</th>
-              <th style="width: 120px; text-align: center; background-color: #fef3c7; color: #92400e; border-left: 2px solid #f59e0b; border-right: 1px solid #fde68a;">📊 Acum. Anual</th>
-              <th style="width: 100px; text-align: center; background-color: #fffbe3; color: #78350f;">% Anual</th>
+              <th>Estudiante</th>
+              <th style="width: 140px; text-align: center; color: #0284c7;">Faltas Periodo</th>
+              <th style="width: 140px; text-align: center; background-color: #fef3c7; color: #92400e;">Total Faltas Anuales</th>
+              <th style="width: 140px; text-align: center; background-color: #fffbe3; color: #78350f;">% Inasistencia Anual</th>
               <th style="width: 120px; text-align: center;">Estado</th>
             </tr>
           </thead>
-          <tbody id="tbodyInasistencias">
-            <!-- Datos renderizados dinámicamente según Selección de Año/División -->
+          <tbody id="tbodyConsultaInasistencias">
+            <!-- Datos cargados dinámicamente -->
+          </tbody>
+        </table>
+      </div>
+
+    </div>
+  </div>
+
+  <!-- SUB-PESTAÑA 3: CUADRO DE ALERTAS Y SEGUIMIENTO (Tu vista original) -->
+  <div id="subTabAlertaInasistencias" style="display: none;">
+    <div style="background: white; border-radius: 12px; padding: 16px; box-shadow: 0 1px 3px rgba(0,0,0,0.1);">
+      <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 12px;">
+        <h3 style="margin: 0; color: #1e293b; font-size: 16px;">
+          🚨 Estudiantes Prioritarios para Seguimiento Institucional
+        </h3>
+        <span style="font-size: 13px; color: #64748b;">
+          Criterio: Riesgo (70% - 79% asist.) | Alerta (&lt; 70% asist.)
+        </span>
+      </div>
+
+      <div class="table-responsive">
+        <table id="tablaSeguimientoAlumnos" class="control-table" style="width: 100%;">
+          <thead>
+            <tr style="background-color: #f8fafc;">
+              <th>Curso / Sec.</th>
+              <th>Alumno</th>
+              <th style="width: 120px; text-align: center; color: #b91c1c;">Faltas Anuales</th>
+              <th style="width: 120px; text-align: center;">% Asist. Anual</th>
+              <th style="width: 140px; text-align: center;">Estado</th>
+            </tr>
+          </thead>
+          <tbody id="tbodySeguimiento">
+            <tr>
+              <td colspan="5" style="text-align: center; color: #64748b; padding: 20px;">
+                🎉 <strong>Sin situaciones críticas:</strong> Seleccioná un curso para auditar sus faltas acumuladas.
+              </td>
+            </tr>
           </tbody>
         </table>
       </div>
     </div>
+  </div>
 
-    <!-- SUB-PESTAÑA 2: CUADRO DE ALERTAS Y SEGUIMIENTO -->
-    <div id="subTabAlertaInasistencias" style="display: none;">
-      <div style="background: white; border-radius: 12px; padding: 16px; box-shadow: 0 1px 3px rgba(0,0,0,0.1);">
-        <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 12px;">
-          <h3 style="margin: 0; color: #1e293b; font-size: 16px;">
-            🚨 Estudiantes Prioritarios para Seguimiento Institucional
-          </h3>
-          <span style="font-size: 13px; color: #64748b;">
-            Criterio: Riesgo (70% - 79% asist.) | Alerta (&lt; 70% asist.)
-          </span>
-        </div>
-
-        <div class="table-responsive">
-          <table id="tablaSeguimientoAlumnos" class="control-table" style="width: 100%;">
-            <thead>
-              <tr style="background-color: #f8fafc;">
-                <th>Curso / Sec.</th>
-                <th>Alumno</th>
-                <th style="width: 120px; text-align: center; color: #b91c1c;">Faltas Anuales</th>
-                <th style="width: 120px; text-align: center;">% Asist. Anual</th>
-                <th style="width: 140px; text-align: center;">Estado</th>
-              </tr>
-            </thead>
-            <tbody id="tbodySeguimiento">
-              <tr>
-                <td colspan="5" style="text-align: center; color: #64748b; padding: 20px;">
-                  🎉 <strong>Sin situaciones críticas:</strong> Seleccioná un curso para auditar sus faltas acumuladas.
-                </td>
-              </tr>
-            </tbody>
-          </table>
-        </div>
-      </div>
-    </div>
-
-  </section>
+</section>
   
   <!-- Pestaña 4: Calificaciones -->
   <section id="calificaciones" class="tab-content" style="display: none;">
@@ -2310,36 +2378,65 @@ function filtrarTablaInasistencias() {
   });
 }
 
-// 11. Alternar sub-pestañas
+// Variable global para almacenar el reporte de inasistencias en memoria
+let listaAlumnosReporteInasistencias = [];
+
+// 11. Alternar sub-pestañas (Planilla, Consulta y Alerta)
 function cambiarSubPestanaInasistencias(subTab) {
   const divPlanilla = document.getElementById('subTabPlanillaInasistencias');
+  const divConsulta = document.getElementById('subTabConsultaInasistencias');
   const divAlerta = document.getElementById('subTabAlertaInasistencias');
+
   const btnPlanilla = document.getElementById('btnSubTabPlanilla');
+  const btnConsulta = document.getElementById('btnSubTabConsulta');
   const btnAlerta = document.getElementById('btnSubTabAlerta');
 
+  const panelFiltrosCarga = document.getElementById('panelFiltrosCarga');
+
+  // 1. Ocultar todos los contenedores de las subpestañas
+  if (divPlanilla) divPlanilla.style.display = 'none';
+  if (divConsulta) divConsulta.style.display = 'none';
+  if (divAlerta) divAlerta.style.display = 'none';
+
+  // 2. Resetear estilos de todos los botones
+  [btnPlanilla, btnConsulta, btnAlerta].forEach(btn => {
+    if (btn) {
+      btn.style.borderBottom = '3px solid transparent';
+      btn.style.color = '#64748b';
+    }
+  });
+
+  // 3. Activar la subpestaña seleccionada
   if (subTab === 'planilla') {
     if (divPlanilla) divPlanilla.style.display = 'block';
-    if (divAlerta) divAlerta.style.display = 'none';
+    if (panelFiltrosCarga) panelFiltrosCarga.style.display = 'block';
 
     if (btnPlanilla) {
       btnPlanilla.style.borderBottom = '3px solid #2563eb';
       btnPlanilla.style.color = '#2563eb';
     }
-    if (btnAlerta) {
-      btnAlerta.style.borderBottom = '3px solid transparent';
-      btnAlerta.style.color = '#64748b';
+
+  } else if (subTab === 'consulta') {
+    if (divConsulta) divConsulta.style.display = 'block';
+    if (panelFiltrosCarga) panelFiltrosCarga.style.display = 'none';
+
+    if (btnConsulta) {
+      btnConsulta.style.borderBottom = '3px solid #2563eb';
+      btnConsulta.style.color = '#2563eb';
     }
-  } else {
-    if (divPlanilla) divPlanilla.style.display = 'none';
+
+    // Cargar automáticamente el reporte al ingresar a esta subpestaña
+    if (typeof cargarReporteInasistencias === 'function') {
+      cargarReporteInasistencias();
+    }
+
+  } else if (subTab === 'alerta') {
     if (divAlerta) divAlerta.style.display = 'block';
+    if (panelFiltrosCarga) panelFiltrosCarga.style.display = 'none';
 
     if (btnAlerta) {
       btnAlerta.style.borderBottom = '3px solid #dc2626';
       btnAlerta.style.color = '#dc2626';
-    }
-    if (btnPlanilla) {
-      btnPlanilla.style.borderBottom = '3px solid transparent';
-      btnPlanilla.style.color = '#64748b';
     }
   }
 }
@@ -2349,7 +2446,6 @@ function cambiarSubPestanaInasistencias(subTab) {
 function filtrarTablaGestionAlumnos() {
   const busqueda = document.getElementById('inputBuscarGestionAlumno')?.value.toLowerCase().trim() || '';
   const filas = document.querySelectorAll('#tablaGestionAlumnos tbody tr');
-
   filas.forEach(fila => {
     const textoFila = fila.innerText.toLowerCase();
     if (textoFila.includes(busqueda)) {
