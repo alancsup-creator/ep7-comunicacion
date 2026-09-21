@@ -2240,37 +2240,42 @@ async function cargarInasistenciasMensuales() {
 
 // 8. Recalcular la suma anual respetando los días guardados década alumno
 async function cargarAcumuladoAnual() {
-  const mes = mesInasistenciasActivo || document.getElementById('mesInasistencias').value.trim();
-  if (!mes) return;
+  const inputMes = document.getElementById('mesInasistencias');
+  const mesSeleccionado = mesInasistenciasActivo || inputMes?.value.trim();
+  if (!mesSeleccionado) return;
 
-  const anio = mes.split('-')[0];
+  // Extraer el año (ej: "2026")
+  const anio = mesSeleccionado.split('-')[0];
 
+  // 1. Consultar TODOS los registros del año activo para la tabla inasistencias_alumnos
   const { data, error } = await supabaseClient
     .from('inasistencias_alumnos')
-    .select('alumno_id, faltas, dias_clase')
-    .gte('mes', `${anio}-01`)
-    .lte('mes', `${anio}-12`);
+    .select('alumno_id, faltas, dias_clase, mes')
+    .like('mes', `${anio}-%`); // Trae todos los meses del año (2026-01, 2026-02, etc.)
 
   if (error) {
     console.error('❌ Error al calcular acumulado anual:', error);
     return;
   }
 
+  // 2. Acumular faltas y días hábiles por cada alumno
   const acumuladosFaltas = {};
   const acumuladosDiasClase = {};
 
-  if (data) {
+  if (data && data.length > 0) {
     data.forEach(rec => {
+      const id = rec.alumno_id;
       const faltas = parseFloat(rec.faltas) || 0;
       const dias = parseInt(rec.dias_clase) || 20;
 
-      acumuladosFaltas[rec.alumno_id] = (acumuladosFaltas[rec.alumno_id] || 0) + faltas;
-      acumuladosDiasClase[rec.alumno_id] = (acumuladosDiasClase[rec.alumno_id] || 0) + dias;
+      acumuladosFaltas[id] = (acumuladosFaltas[id] || 0) + faltas;
+      acumuladosDiasClase[id] = (acumuladosDiasClase[id] || 0) + dias;
     });
   }
 
   const listaSeguimiento = [];
 
+  // 3. Recorrer cada fila de la tabla para actualizar la pantalla
   document.querySelectorAll('#tablaInasistencias tbody tr').forEach(fila => {
     const alumnoId = fila.getAttribute('data-alumno-id');
     const curso = fila.getAttribute('data-curso') || '';
@@ -2280,18 +2285,24 @@ async function cargarAcumuladoAnual() {
     const celdaPctAnual = fila.querySelector('.porcentaje-anual');
     const celdaEstado = fila.querySelector('.estado-asistencia');
 
+    // Faltas totales guardadas en el año
     const totalFaltasAnio = acumuladosFaltas[alumnoId] || 0;
+    
+    // Días de clase acumulados de los meses registrados (o los del mes activo si no hay historial)
     const diasFilaLocal = parseInt(fila.getAttribute('data-dias-clase')) || 20;
     const totalDiasEscolares = acumuladosDiasClase[alumnoId] || diasFilaLocal;
 
+    // Asistencias y porcentaje anual
     const asistenciasAnio = Math.max(0, totalDiasEscolares - totalFaltasAnio);
     const pctAsistenciaAnual = totalDiasEscolares > 0 
       ? Math.round((asistenciasAnio / totalDiasEscolares) * 100) 
       : 100;
 
+    // Actualizar celdas en la tabla
     if (celdaAcumulado) celdaAcumulado.innerText = totalFaltasAnio;
     if (celdaPctAnual) celdaPctAnual.innerText = `${pctAsistenciaAnual}%`;
 
+    // Evaluar situación del alumno
     let estadoHTML = '';
     let estadoTexto = 'Regular';
 
@@ -2308,6 +2319,7 @@ async function cargarAcumuladoAnual() {
 
     if (celdaEstado) celdaEstado.innerHTML = estadoHTML;
 
+    // Si está en situación crítica, agregar a la tabla de alertas
     if (estadoTexto === 'Riesgo' || estadoTexto === 'Alerta') {
       listaSeguimiento.push({
         curso: curso,
@@ -2321,6 +2333,7 @@ async function cargarAcumuladoAnual() {
 
   poblarTablaSeguimiento(listaSeguimiento);
 }
+
 
 // 9. Renderizar tabla de seguimiento prioritario
 function poblarTablaSeguimiento(lista) {
