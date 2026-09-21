@@ -2393,12 +2393,17 @@ function cambiarSubPestanaInasistencias(subTab) {
 
   const panelFiltrosCarga = document.getElementById('panelFiltrosCarga');
 
-  // 1. Ocultar todos los contenedores de las subpestañas
+  // 1. Ocultar únicamente las vistas internas de las subpestañas
   if (divPlanilla) divPlanilla.style.display = 'none';
   if (divConsulta) divConsulta.style.display = 'none';
   if (divAlerta) divAlerta.style.display = 'none';
 
-  // 2. Resetear estilos de todos los botones
+  // 2. MANTENER SIEMPRE VISIBLE el panel de filtros/cabecera para no perder la navegación
+  if (panelFiltrosCarga) {
+    panelFiltrosCarga.style.display = 'block';
+  }
+
+  // 3. Resetear estilos de los botones superiores
   [btnPlanilla, btnConsulta, btnAlerta].forEach(btn => {
     if (btn) {
       btn.style.borderBottom = '3px solid transparent';
@@ -2406,11 +2411,9 @@ function cambiarSubPestanaInasistencias(subTab) {
     }
   });
 
-  // 3. Activar la subpestaña seleccionada
+  // 4. Activar la subpestaña correspondiente
   if (subTab === 'planilla') {
     if (divPlanilla) divPlanilla.style.display = 'block';
-    if (panelFiltrosCarga) panelFiltrosCarga.style.display = 'block';
-
     if (btnPlanilla) {
       btnPlanilla.style.borderBottom = '3px solid #2563eb';
       btnPlanilla.style.color = '#2563eb';
@@ -2418,22 +2421,18 @@ function cambiarSubPestanaInasistencias(subTab) {
 
   } else if (subTab === 'consulta') {
     if (divConsulta) divConsulta.style.display = 'block';
-    if (panelFiltrosCarga) panelFiltrosCarga.style.display = 'none';
-
     if (btnConsulta) {
       btnConsulta.style.borderBottom = '3px solid #2563eb';
       btnConsulta.style.color = '#2563eb';
     }
 
-    // Cargar automáticamente el reporte al ingresar a esta subpestaña
+    // Ejecutar la consulta respetando los filtros seleccionados arriba
     if (typeof cargarReporteInasistencias === 'function') {
       cargarReporteInasistencias();
     }
 
   } else if (subTab === 'alerta') {
     if (divAlerta) divAlerta.style.display = 'block';
-    if (panelFiltrosCarga) panelFiltrosCarga.style.display = 'none';
-
     if (btnAlerta) {
       btnAlerta.style.borderBottom = '3px solid #dc2626';
       btnAlerta.style.color = '#dc2626';
@@ -2441,7 +2440,7 @@ function cambiarSubPestanaInasistencias(subTab) {
   }
 }
 
-// 12. GESTIÓN DE ALUMNO Y USUARIOS
+  // 12. GESTIÓN DE ALUMNO Y USUARIOS
 // Filtrar estudiantes en tiempo real dentro del panel de gestión
 function filtrarTablaGestionAlumnos() {
   const busqueda = document.getElementById('inputBuscarGestionAlumno')?.value.toLowerCase().trim() || '';
