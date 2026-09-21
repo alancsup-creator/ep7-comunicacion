@@ -2935,6 +2935,134 @@ document.addEventListener('DOMContentLoaded', () => {
     observer.observe(seccionGestion, { attributes: true });
   }
 });
+
+  // 1. Variable global donde guardamos los datos traídos de la base de datos
+let listaAlumnosReporteInasistencias = [];
+
+// 2. Función que consulta la base de datos y arma el listado base
+async function cargarReporteInasistencias() {
+  const tbody = document.getElementById('tbodyConsultaInasistencias');
+  if (!tbody) return;
+
+  tbody.innerHTML = '<tr><td colspan="6" style="text-align: center; padding: 20px;">Cargando reporte de inasistencias...</td></tr>';
+
+  try {
+    const cliente = typeof supabaseClient !== 'undefined' ? supabaseClient : supabase;
+
+    // Obtener valores de Año y División seleccionados en la cabecera
+    const anio = document.getElementById('selectAnioInasistencias')?.value || '';
+    const seccion = document.getElementById('selectSeccionInasistencias')?.value || '';
+
+    // Consultar alumnos filtrados si hay selección
+    let queryAlumnos = cliente.from('alumnos').select('*');
+    if (anio) queryAlumnos = queryAlumnos.eq('curso', anio);
+    if (seccion) queryAlumnos = queryAlumnos.eq('division', seccion);
+
+    const { data: alumnos, error: errAlumnos } = await queryAlumnos;
+    if (errAlumnos) throw errAlumnos;
+
+    // Consultar todas las inasistencias
+    const { data: registrosInasistencias, error: errInasistencias } = await cliente
+      .from('inasistencias')
+      .select('*');
+
+    if (errInasistencias) throw errInasistencias;
+
+    const DIAS_CLASE_ANUALES = 180; // Días base para cálculo de % anual
+
+    // Armar estructura agrupada por alumno
+    listaAlumnosReporteInasistencias = (alumnos || []).map(al => {
+      const faltas = (registrosInasistencias || []).filter(i => String(i.alumno_id) === String(al.id));
+
+      let totalAnual = 0;
+      let t1 = 0;  // Mar, Abr, May (Meses 2, 3, 4)
+      let t2 = 0;  // Jun, Jul, Ago (Meses 5, 6, 7)
+      let t3 = 0;  // Sep, Oct, Nov (Meses 8, 9, 10)
+      let dic = 0; // Diciembre (Mes 11)
+
+      faltas.forEach(reg => {
+        const fecha = new Date(reg.fecha);
+        const mes = fecha.getMonth();
+        const valorFalta = parseFloat(reg.cantidad || reg.valor || 1);
+
+        totalAnual += valorFalta;
+
+        if (mes >= 2 && mes <= 4) t1 += valorFalta;
+        else if (mes >= 5 && mes <= 7) t2 += valorFalta;
+        else if (mes >= 8 && mes <= 10) t3 += valorFalta;
+        else if (mes === 11) dic += valorFalta;
+      });
+
+      const pctInasistenciaAnual = ((totalAnual / DIAS_CLASE_ANUALES) * 100).toFixed(1);
+
+      return {
+        id: al.id,
+        nombre: al.nombre_apellido || 'Sin nombre',
+        cursoDiv: `${al.curso || ''} ${al.division || ''}`.trim() || '-',
+        t1,
+        t2,
+        t3,
+        dic,
+        totalAnual,
+        pctInasistenciaAnual
+      };
+    });
+
+    // Renderizar la tabla con los filtros seleccionados
+    filtrarReporteTrimestralJS();
+
+  } catch (err) {
+    console.error("Error al cargar reporte:", err);
+    tbody.innerHTML = `<tr><td colspan="6" style="text-align: center; color: red; padding: 15px;">Error: ${err.message}</td></tr>`;
+  }
+}
+
+// 3. FUNCIÓN NUEVA: Filtra instantáneamente la tabla sin volver a consultar a Supabase
+function filtrarReporteTrimestralJS() {
+  const tbody = document.getElementById('tbodyConsultaInasistencias');
+  if (!tbody) return;
+
+  const periodo = document.getElementById('filtroTrimestreConsulta')?.value || 'anual';
+  const busqueda = document.getElementById('inputBuscarAlumnoConsulta')?.value.toLowerCase().trim() || '';
+
+  const filtrados = (listaAlumnosReporteInasistencias || []).filter(al => {
+    return !busqueda || al.nombre.toLowerCase().includes(busqueda);
+  });
+
+  if (filtrados.length === 0) {
+    tbody.innerHTML = '<tr><td colspan="6" style="text-align: center; color: #64748b; padding: 20px;">No se encontraron registros.</td></tr>';
+    return;
+  }
+
+  tbody.innerHTML = '';
+  filtrados.forEach(al => {
+    let faltasPeriodo = al.totalAnual;
+    if (periodo === 't1') faltasPeriodo = al.t1;
+    if (periodo === 't2') faltasPeriodo = al.t2;
+    if (periodo === 't3') faltasPeriodo = al.t3;
+    if (periodo === 'dic') faltasPeriodo = al.dic;
+
+    let badgeEstado = '<span style="background: #dcfce7; color: #15803d; padding: 4px 8px; border-radius: 12px; font-weight: bold; font-size: 11px;">Normal</span>';
+    if (al.pctInasistenciaAnual >= 15 && al.pctInasistenciaAnual < 25) {
+      badgeEstado = '<span style="background: #fef3c7; color: #b45309; padding: 4px 8px; border-radius: 12px; font-weight: bold; font-size: 11px;">⚠️ En Riesgo</span>';
+    } else if (al.pctInasistenciaAnual >= 25) {
+      badgeEstado = '<span style="background: #fee2e2; color: #b91c1c; padding: 4px 8px; border-radius: 12px; font-weight: bold; font-size: 11px;">🚨 Crítico</span>';
+    }
+
+    const tr = document.createElement('tr');
+    tr.style.borderBottom = '1px solid #e2e8f0';
+
+    tr.innerHTML = `
+      <td style="padding: 10px;">${al.cursoDiv}</td>
+      <td style="padding: 10px;"><strong>${al.nombre}</strong></td>
+      <td style="padding: 10px; text-align: center; font-weight: bold; color: #0284c7; font-size: 15px;">${faltasPeriodo}</td>
+      <td style="padding: 10px; text-align: center; font-weight: bold; background-color: #fffbeb;">${al.totalAnual}</td>
+      <td style="padding: 10px; text-align: center; font-weight: bold; background-color: #fefce8;">${al.pctInasistenciaAnual}%</td>
+      <td style="padding: 10px; text-align: center;">${badgeEstado}</td>
+    `;
+    tbody.appendChild(tr);
+  });
+}
   
 </script>
 </body>
