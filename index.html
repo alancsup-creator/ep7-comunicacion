@@ -2960,7 +2960,7 @@ async function cargarReporteInasistencias() {
 
     // Consultar todas las inasistencias
     const { data: registrosInasistencias, error: errInasistencias } = await cliente
-      .from('inasistencias')
+      .from('inasistencias_alumnos')
       .select('*');
 
     if (errInasistencias) throw errInasistencias;
