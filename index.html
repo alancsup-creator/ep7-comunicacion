@@ -2026,19 +2026,20 @@ function obtenerCursoSeleccionado() {
 }
 
 // 2. Evento al cambiar de Año o División en los desplegables
+// Evento al cambiar de Año o División en los desplegables
 function alCambiarFiltroOCurso() {
-  // Filtrar la planilla
+  // 1. Filtrar la tabla de la planilla de carga
   filtrarTablaInasistencias();
   
+  // 2. Actualizar los días hábiles configurados para el curso seleccionado
   const cursoClave = obtenerCursoSeleccionado();
   const inputDias = document.getElementById('diasClaseMes');
   
   if (inputDias) {
-    // Si ya hay días guardados para este curso, los asigna; si no, deja 20 por defecto
     inputDias.value = diasHabilesPorCurso[cursoClave] || 20;
   }
 
-  // Recalcular métricas de las filas visibles
+  // 3. Recalcular las métricas de las filas visibles en la planilla
   document.querySelectorAll('#tablaInasistencias tbody tr').forEach(fila => {
     if (fila.style.display !== 'none') {
       const diasFila = diasHabilesPorCurso[cursoClave] || parseInt(inputDias?.value) || 20;
@@ -2047,13 +2048,22 @@ function alCambiarFiltroOCurso() {
     }
   });
 
-  // Actualizar reportes si están activos
+  // 4. Si la subpestaña Consulta está visible, recargar sus datos con el nuevo curso
   const divConsulta = document.getElementById('subTabConsultaInasistencias');
   if (divConsulta && divConsulta.style.display !== 'none') {
-    if (typeof cargarReporteInasistencias === 'function') cargarReporteInasistencias();
+    if (typeof cargarReporteInasistencias === 'function') {
+      cargarReporteInasistencias();
+    }
+  }
+
+  // 5. Si la subpestaña Alerta está visible, procesar las alertas directamente
+  const divAlerta = document.getElementById('subTabAlertaInasistencias');
+  if (divAlerta && divAlerta.style.display !== 'none') {
+    if (typeof procesarAlertasInasistencias === 'function') {
+      procesarAlertasInasistencias();
+    }
   }
 }
-
 // 3. Evento al modificar los días hábiles en el input
 function actualizarDiasHabilesDelCursoActual() {
   const cursoClave = obtenerCursoSeleccionado();
@@ -2438,6 +2448,83 @@ function poblarTablaSeguimiento(lista) {
   });
 }
 
+  // Procesa las alertas de riesgo directamente consultando la base de datos de Supabase
+async function procesarAlertasInasistencias() {
+  const tbodySeguimiento = document.querySelector('#tablaSeguimientoAlumnos tbody');
+  if (!tbodySeguimiento) return;
+
+  tbodySeguimiento.innerHTML = '<tr><td colspan="5" style="text-align: center; color: #64748b; padding: 20px;">Cargando casos de riesgo y alerta...</td></tr>';
+
+  try {
+    const cliente = typeof supabaseClient !== 'undefined' ? supabaseClient : supabase;
+    const cursoClave = typeof obtenerCursoSeleccionado === 'function' ? obtenerCursoSeleccionado() : '';
+
+    // 1. Consultar alumnos
+    let queryAlumnos = cliente.from('alumnos').select('*');
+    if (cursoClave) {
+      queryAlumnos = queryAlumnos.eq('curso_division', cursoClave);
+    }
+    const { data: alumnos, error: errAlumnos } = await queryAlumnos;
+    if (errAlumnos) throw errAlumnos;
+
+    // 2. Consultar inasistencias
+    const { data: inasistencias, error: errInasistencias } = await cliente
+      .from('inasistencias_alumnos')
+      .select('*');
+    if (errInasistencias) throw errInasistencias;
+
+    const listaSeguimiento = [];
+
+    (alumnos || []).forEach(al => {
+      const alumnoKey = `al_${(al.nombre_apellido || '').toLowerCase().replace(/[^a-z0-9]/g, '_')}`;
+      
+      const faltas = (inasistencias || []).filter(i => 
+        String(i.alumno_id) === alumnoKey || String(i.alumno_id) === String(al.id)
+      );
+
+      let totalFaltasAnio = 0;
+      let totalDiasEscolares = 0;
+
+      faltas.forEach(reg => {
+        totalFaltasAnio += parseFloat(reg.faltas || 0);
+        totalDiasEscolares += parseInt(reg.dias_clase || 20);
+      });
+
+      const diasBase = totalDiasEscolares > 0 ? totalDiasEscolares : 20;
+      const asistenciasAnio = Math.max(0, diasBase - totalFaltasAnio);
+      const pctAsistenciaAnual = Math.round((asistenciasAnio / diasBase) * 100);
+
+      let estadoTexto = 'Regular';
+      let estadoHTML = '';
+
+      if (pctAsistenciaAnual < 70) {
+        estadoTexto = 'Alerta';
+        estadoHTML = `<span style="background: #fef2f2; color: #dc2626; border: 1px solid #fca5a5; padding: 3px 8px; border-radius: 12px; font-size: 12px; font-weight: bold;">🚨 Alerta</span>`;
+      } else if (pctAsistenciaAnual >= 70 && pctAsistenciaAnual < 80) {
+        estadoTexto = 'Riesgo';
+        estadoHTML = `<span style="background: #fffbe3; color: #b45309; border: 1px solid #fde68a; padding: 3px 8px; border-radius: 12px; font-size: 12px; font-weight: bold;">⚠️ Riesgo</span>`;
+      }
+
+      if (estadoTexto === 'Riesgo' || estadoTexto === 'Alerta') {
+        listaSeguimiento.push({
+          curso: al.curso_division || al.curso || '-',
+          alumno: al.nombre_apellido || 'Sin nombre',
+          faltas: totalFaltasAnio,
+          pct: pctAsistenciaAnual,
+          estadoHTML: estadoHTML
+        });
+      }
+    });
+
+    // Renderizar los resultados
+    poblarTablaSeguimiento(listaSeguimiento);
+
+  } catch (err) {
+    console.error("Error al procesar alertas de inasistencias:", err);
+    tbodySeguimiento.innerHTML = `<tr><td colspan="5" style="text-align: center; color: red; padding: 15px;">Error al cargar alertas: ${err.message}</td></tr>`;
+  }
+}
+  
 // 10. Filtrar tabla por buscador y desplegables
 function filtrarTablaInasistencias() {
   const buscador = document.getElementById('inputBuscarInasistencia')?.value.toLowerCase().trim() || '';
@@ -2473,64 +2560,44 @@ function filtrarTablaInasistencias() {
 let listaAlumnosReporteInasistencias = [];
 
 // 11. Alternar sub-pestañas (Planilla, Consulta y Alerta)
-function cambiarSubPestanaInasistencias(subTab) {
-  const divPlanilla = document.getElementById('subTabPlanillaInasistencias');
-  const divConsulta = document.getElementById('subTabConsultaInasistencias');
-  const divAlerta = document.getElementById('subTabAlertaInasistencias');
-
-  const btnPlanilla = document.getElementById('btnSubTabPlanilla');
-  const btnConsulta = document.getElementById('btnSubTabConsulta');
-  const btnAlerta = document.getElementById('btnSubTabAlerta');
-
-  const panelFiltrosCarga = document.getElementById('panelFiltrosCarga');
-
-  // 1. Ocultar únicamente las vistas internas de las subpestañas
-  if (divPlanilla) divPlanilla.style.display = 'none';
-  if (divConsulta) divConsulta.style.display = 'none';
-  if (divAlerta) divAlerta.style.display = 'none';
-
-  // 2. MANTENER SIEMPRE VISIBLE el panel de filtros/cabecera para no perder la navegación
-  if (panelFiltrosCarga) {
-    panelFiltrosCarga.style.display = 'block';
+// Evento al cambiar de Año o División en los desplegables
+function alCambiarFiltroOCurso() {
+  // 1. Filtrar la tabla de la planilla de carga
+  filtrarTablaInasistencias();
+  
+  // 2. Actualizar los días hábiles configurados para el curso seleccionado
+  const cursoClave = obtenerCursoSeleccionado();
+  const inputDias = document.getElementById('diasClaseMes');
+  
+  if (inputDias) {
+    inputDias.value = diasHabilesPorCurso[cursoClave] || 20;
   }
 
-  // 3. Resetear estilos de los botones superiores
-  [btnPlanilla, btnConsulta, btnAlerta].forEach(btn => {
-    if (btn) {
-      btn.style.borderBottom = '3px solid transparent';
-      btn.style.color = '#64748b';
+  // 3. Recalcular las métricas de las filas visibles en la planilla
+  document.querySelectorAll('#tablaInasistencias tbody tr').forEach(fila => {
+    if (fila.style.display !== 'none') {
+      const diasFila = diasHabilesPorCurso[cursoClave] || parseInt(inputDias?.value) || 20;
+      fila.setAttribute('data-dias-clase', diasFila);
+      recalcularFila(fila);
     }
   });
 
-  // 4. Activar la subpestaña correspondiente
-  if (subTab === 'planilla') {
-    if (divPlanilla) divPlanilla.style.display = 'block';
-    if (btnPlanilla) {
-      btnPlanilla.style.borderBottom = '3px solid #2563eb';
-      btnPlanilla.style.color = '#2563eb';
-    }
-
-  } else if (subTab === 'consulta') {
-    if (divConsulta) divConsulta.style.display = 'block';
-    if (btnConsulta) {
-      btnConsulta.style.borderBottom = '3px solid #2563eb';
-      btnConsulta.style.color = '#2563eb';
-    }
-
-    // Ejecutar la consulta respetando los filtros seleccionados arriba
+  // 4. Si la subpestaña Consulta está visible, recargar sus datos con el nuevo curso
+  const divConsulta = document.getElementById('subTabConsultaInasistencias');
+  if (divConsulta && divConsulta.style.display !== 'none') {
     if (typeof cargarReporteInasistencias === 'function') {
       cargarReporteInasistencias();
     }
+  }
 
-  } else if (subTab === 'alerta') {
-    if (divAlerta) divAlerta.style.display = 'block';
-    if (btnAlerta) {
-      btnAlerta.style.borderBottom = '3px solid #dc2626';
-      btnAlerta.style.color = '#dc2626';
+  // 5. Si la subpestaña Alerta está visible, procesar las alertas directamente
+  const divAlerta = document.getElementById('subTabAlertaInasistencias');
+  if (divAlerta && divAlerta.style.display !== 'none') {
+    if (typeof procesarAlertasInasistencias === 'function') {
+      procesarAlertasInasistencias();
     }
   }
 }
-
   // 12. GESTIÓN DE ALUMNO Y USUARIOS
 // Filtrar estudiantes en tiempo real dentro del panel de gestión
 function filtrarTablaGestionAlumnos() {
