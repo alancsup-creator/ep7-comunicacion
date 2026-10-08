@@ -2504,17 +2504,18 @@ function cambiarSubPestanaInasistencias(subTab) {
 }
 
 // Procesa las alertas de riesgo consultando directamente en Supabase
+// Procesa las alertas de riesgo consultando la totalidad de registros en Supabase
 async function procesarAlertasInasistencias() {
   const tbodySeguimiento = document.querySelector('#tablaSeguimientoAlumnos tbody');
   if (!tbodySeguimiento) return;
 
-  tbodySeguimiento.innerHTML = '<tr><td colspan="5" style="text-align: center; color: #64748b; padding: 20px;">Cargando casos de riesgo y alerta...</td></tr>';
+  tbodySeguimiento.innerHTML = '<tr><td colspan="5" style="text-align: center; color: #64748b; padding: 20px;">Cargando casos de riesgo y alerta de todos los cursos...</td></tr>';
 
   try {
     const cliente = typeof supabaseClient !== 'undefined' ? supabaseClient : supabase;
     const cursoClave = typeof obtenerCursoSeleccionado === 'function' ? obtenerCursoSeleccionado() : '';
 
-    // Consultar alumnos
+    // 1. Consultar alumnos (con o sin filtro de curso)
     let queryAlumnos = cliente.from('alumnos').select('*');
     if (cursoClave) {
       queryAlumnos = queryAlumnos.eq('curso_division', cursoClave);
@@ -2522,20 +2523,42 @@ async function procesarAlertasInasistencias() {
     const { data: alumnos, error: errAlumnos } = await queryAlumnos;
     if (errAlumnos) throw errAlumnos;
 
-    // Consultar inasistencias
-    const { data: inasistencias, error: errInasistencias } = await cliente
-      .from('inasistencias_alumnos')
-      .select('*');
-    if (errInasistencias) throw errInasistencias;
+    // 2. Traer TODAS las inasistencias superando el límite por defecto de 1000 filas
+    let todasLasInasistencias = [];
+    let desde = 0;
+    const paso = 1000;
+    let continuar = true;
+
+    while (continuar) {
+      const { data: bloque, error: errInasistencias } = await cliente
+        .from('inasistencias_alumnos')
+        .select('*')
+        .range(desde, desde + paso - 1);
+
+      if (errInasistencias) throw errInasistencias;
+
+      if (bloque && bloque.length > 0) {
+        todasLasInasistencias = todasLasInasistencias.concat(bloque);
+        desde += paso;
+        if (bloque.length < paso) continuar = false;
+      } else {
+        continuar = false;
+      }
+    }
 
     const listaSeguimiento = [];
 
     (alumnos || []).forEach(al => {
-      const alumnoKey = `al_${(al.nombre_apellido || '').toLowerCase().replace(/[^a-z0-9]/g, '_')}`;
-      
-      const faltas = (inasistencias || []).filter(i => 
-        String(i.alumno_id) === alumnoKey || String(i.alumno_id) === String(al.id)
-      );
+      const nombreAlumno = al.nombre_apellido || '';
+      // Normalización de clave id en formato string y slug
+      const alumnoKeySlug = `al_${nombreAlumno.toLowerCase().replace(/[^a-z0-9]/g, '_')}`;
+      const idOriginalStr = String(al.id);
+
+      // Buscar coincidencia por slug O por id de tabla
+      const faltas = todasLasInasistencias.filter(i => {
+        const idInasistenciaStr = String(i.alumno_id);
+        return idInasistenciaStr === alumnoKeySlug || idInasistenciaStr === idOriginalStr;
+      });
 
       let totalFaltasAnio = 0;
       let totalDiasEscolares = 0;
@@ -2563,7 +2586,7 @@ async function procesarAlertasInasistencias() {
       if (estadoTexto === 'Riesgo' || estadoTexto === 'Alerta') {
         listaSeguimiento.push({
           curso: al.curso_division || al.curso || '-',
-          alumno: al.nombre_apellido || 'Sin nombre',
+          alumno: nombreAlumno || 'Sin nombre',
           faltas: totalFaltasAnio,
           pct: pctAsistenciaAnual,
           estadoHTML: estadoHTML
@@ -2571,14 +2594,17 @@ async function procesarAlertasInasistencias() {
       }
     });
 
+    // Ordenar la lista por porcentaje de asistencia (de menor a mayor)
+    listaSeguimiento.sort((a, b) => a.pct - b.pct);
+
     poblarTablaSeguimiento(listaSeguimiento);
 
   } catch (err) {
     console.error("Error al procesar alertas:", err);
     tbodySeguimiento.innerHTML = `<tr><td colspan="5" style="text-align: center; color: red; padding: 15px;">Error al cargar alertas: ${err.message}</td></tr>`;
   }
-}  
-// 10. Filtrar tabla por buscador y desplegables
+}
+  // 10. Filtrar tabla por buscador y desplegables
 function filtrarTablaInasistencias() {
   const buscador = document.getElementById('inputBuscarInasistencia')?.value.toLowerCase().trim() || '';
   const anioFiltro = document.getElementById('selectAnioInasistencias')?.value.trim() || '';
