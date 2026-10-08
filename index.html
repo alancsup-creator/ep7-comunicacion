@@ -2818,20 +2818,28 @@ async function egresarSeleccionados() {
 }
 
 async function moverAlumno(alumnoId, nuevoAnio, nuevaSeccion) {
-  const nuevoCurso = `${nuevoAnio} ${nuevaSeccion}`;
+  // Construir la cadena del nuevo curso/división (ej: "2° 1ª")
+  const nuevoCurso = `${nuevoAnio} ${nuevaSeccion}`.trim();
 
-  const { error } = await supabaseClient
+  const cliente = typeof supabaseClient !== 'undefined' ? supabaseClient : supabase;
+
+  // Corregido: se usa 'curso_division' en lugar de 'curso'
+  const { error } = await cliente
     .from('alumnos')
-    .update({ curso: nuevoCurso })
+    .update({ curso_division: nuevoCurso })
     .eq('id', alumnoId);
 
   if (error) {
-    alert("Error al mover al estudiante de división.");
+    console.error("Error de Supabase al mover alumno:", error);
+    alert("Error al mover al estudiante de división: " + error.message);
   } else {
+    alert(`✅ Estudiante movido a ${nuevoCurso} con éxito.`);
     cargarTablaGestionAlumnos();
+    if (typeof cargarAlumnosDesdeSupabase === 'function') {
+      cargarAlumnosDesdeSupabase();
+    }
   }
 }
-
 // Cargar la tabla ABM de Estudiantes con ordenamiento en JS y botones completos
 async function cargarTablaGestionAlumnos() {
   console.log("🔄 Cargando la tabla de gestión de alumnos...");
@@ -2972,15 +2980,15 @@ async function eliminarAlumnoIndividual(id, nombre) {
 }
 
 function promptMoverAlumno(id, cursoActual) {
-  const nuevoCurso = prompt("Ingresá el nuevo curso y división (Ej: 1° 4ª):", cursoActual);
-  if (nuevoCurso && nuevoCurso !== cursoActual) {
-    const partes = nuevoCurso.split(' ');
-    if (typeof moverAlumno === 'function') {
-      moverAlumno(id, partes[0], partes[1] || '1ª');
-    }
+  const nuevoCurso = prompt("Ingresá el nuevo curso y división (Ej: 2° 1ª):", cursoActual);
+  if (nuevoCurso && nuevoCurso.trim() !== cursoActual) {
+    const partes = nuevoCurso.trim().split(' ');
+    const anio = partes[0] || '1°';
+    const seccion = partes[1] || '1ª';
+    moverAlumno(id, anio, seccion);
   }
 }
-
+  
 function marcarTodosAlumnos(masterCheckbox) {
   const checkboxes = document.querySelectorAll('.check-alumno-gestion');
   checkboxes.forEach(chk => chk.checked = masterCheckbox.checked);
