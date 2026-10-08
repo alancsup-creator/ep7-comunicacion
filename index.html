@@ -476,11 +476,27 @@
 <section id="inasistencias" class="tab-content" style="display: none;">
   <h2>📅 Registro y Control Institucional de Asistencia</h2>
 
-  <!-- Encabezado y Filtros Generales para la Planilla de Carga -->
+ <!-- Encabezado y Filtros Generales para la Planilla de Carga -->
   <div id="panelFiltrosCarga" style="background: white; border-radius: 12px; padding: 16px; margin-bottom: 16px; box-shadow: 0 1px 3px rgba(0,0,0,0.1);">
     
     <div style="display: flex; gap: 12px; flex-wrap: wrap; align-items: flex-end; margin-bottom: 16px;">
       
+      <!-- Selección de Ciclo Lectivo / Año Escolar (NUEVO) -->
+      <div style="flex: 1; min-width: 130px;">
+        <label style="font-size: 12px; font-weight: bold; color: #475569;">Ciclo Lectivo:</label>
+        <select 
+          id="selectAnioLectivo" 
+          onchange="cambiarCicloLectivo()" 
+          style="width: 100%; padding: 8px; font-size: 14px; border: 1px solid #cbd5e1; border-radius: 6px; font-weight: 600;"
+        >
+          <option value="2026" selected>2026</option>
+          <option value="2027">2027</option>
+          <option value="2028">2028</option>
+          <option value="2029">2029</option>
+          <option value="2030">2030</option>
+        </select>
+      </div>
+
       <!-- Selección de Mes -->
       <div style="flex: 1; min-width: 130px;">
         <label style="font-size: 12px; font-weight: bold; color: #475569;">Mes a Registrar:</label>
@@ -533,7 +549,7 @@
         >
       </div>
     </div>
-
+    
     <!-- Navegación por Sub-pestañas -->
     <div style="display: flex; gap: 8px; border-bottom: 2px solid #e2e8f0; margin-top: 10px; flex-wrap: wrap;">
       <button 
@@ -3296,7 +3312,32 @@ function filtrarReporteTrimestralJS() {
     tbody.appendChild(tr);
   });
 }
-  
+
+  // Maneja el cambio de Ciclo Lectivo (2026 - 2030)
+async function cambiarCicloLectivo() {
+  const anioSeleccionado = document.getElementById('selectAnioLectivo')?.value || '2026';
+  const inputMes = document.getElementById('mesInasistencias');
+
+  if (inputMes) {
+    // Preserva el mes relativo (ej. -03) y le actualiza el año seleccionado
+    const mesActual = inputMes.value ? inputMes.value.split('-')[1] : '03';
+    inputMes.value = `${anioSeleccionado}-${mesActual}`;
+    mesInasistenciasActivo = inputMes.value;
+  }
+
+  // Recargar datos y alertas correspondientes al ciclo seleccionado
+  await cargarInasistenciasMensuales();
+
+  const divConsulta = document.getElementById('subTabConsultaInasistencias');
+  if (divConsulta && divConsulta.style.display !== 'none') {
+    cargarReporteInasistencias();
+  }
+
+  const divAlerta = document.getElementById('subTabAlertaInasistencias');
+  if (divAlerta && divAlerta.style.display !== 'none') {
+    procesarAlertasInasistencias();
+  }
+}
 </script>
 </body>
 </html>
