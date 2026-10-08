@@ -2449,6 +2449,61 @@ function poblarTablaSeguimiento(lista) {
 }
 
   // Procesa las alertas de riesgo directamente consultando la base de datos de Supabase
+// 11. Alternar sub-pestañas (Planilla, Consulta y Alerta)
+function cambiarSubPestanaInasistencias(subTab) {
+  const divPlanilla = document.getElementById('subTabPlanillaInasistencias');
+  const divConsulta = document.getElementById('subTabConsultaInasistencias');
+  const divAlerta = document.getElementById('subTabAlertaInasistencias');
+
+  const btnPlanilla = document.getElementById('btnSubTabPlanilla');
+  const btnConsulta = document.getElementById('btnSubTabConsulta');
+  const btnAlerta = document.getElementById('btnSubTabAlerta');
+
+  const panelFiltrosCarga = document.getElementById('panelFiltrosCarga');
+
+  // Ocultar las vistas de las subpestañas
+  if (divPlanilla) divPlanilla.style.display = 'none';
+  if (divConsulta) divConsulta.style.display = 'none';
+  if (divAlerta) divAlerta.style.display = 'none';
+
+  // Mantener visible la cabecera con filtros
+  if (panelFiltrosCarga) panelFiltrosCarga.style.display = 'block';
+
+  // Resetear estilos de botones
+  [btnPlanilla, btnConsulta, btnAlerta].forEach(btn => {
+    if (btn) {
+      btn.style.borderBottom = '3px solid transparent';
+      btn.style.color = '#64748b';
+    }
+  });
+
+  // Activar la subpestaña seleccionada
+  if (subTab === 'planilla') {
+    if (divPlanilla) divPlanilla.style.display = 'block';
+    if (btnPlanilla) {
+      btnPlanilla.style.borderBottom = '3px solid #2563eb';
+      btnPlanilla.style.color = '#2563eb';
+    }
+  } else if (subTab === 'consulta') {
+    if (divConsulta) divConsulta.style.display = 'block';
+    if (btnConsulta) {
+      btnConsulta.style.borderBottom = '3px solid #2563eb';
+      btnConsulta.style.color = '#2563eb';
+    }
+    if (typeof cargarReporteInasistencias === 'function') {
+      cargarReporteInasistencias();
+    }
+  } else if (subTab === 'alerta') {
+    if (divAlerta) divAlerta.style.display = 'block';
+    if (btnAlerta) {
+      btnAlerta.style.borderBottom = '3px solid #dc2626';
+      btnAlerta.style.color = '#dc2626';
+    }
+    procesarAlertasInasistencias();
+  }
+}
+
+// Procesa las alertas de riesgo consultando directamente en Supabase
 async function procesarAlertasInasistencias() {
   const tbodySeguimiento = document.querySelector('#tablaSeguimientoAlumnos tbody');
   if (!tbodySeguimiento) return;
@@ -2459,7 +2514,7 @@ async function procesarAlertasInasistencias() {
     const cliente = typeof supabaseClient !== 'undefined' ? supabaseClient : supabase;
     const cursoClave = typeof obtenerCursoSeleccionado === 'function' ? obtenerCursoSeleccionado() : '';
 
-    // 1. Consultar alumnos
+    // Consultar alumnos
     let queryAlumnos = cliente.from('alumnos').select('*');
     if (cursoClave) {
       queryAlumnos = queryAlumnos.eq('curso_division', cursoClave);
@@ -2467,7 +2522,7 @@ async function procesarAlertasInasistencias() {
     const { data: alumnos, error: errAlumnos } = await queryAlumnos;
     if (errAlumnos) throw errAlumnos;
 
-    // 2. Consultar inasistencias
+    // Consultar inasistencias
     const { data: inasistencias, error: errInasistencias } = await cliente
       .from('inasistencias_alumnos')
       .select('*');
@@ -2516,15 +2571,13 @@ async function procesarAlertasInasistencias() {
       }
     });
 
-    // Renderizar los resultados
     poblarTablaSeguimiento(listaSeguimiento);
 
   } catch (err) {
-    console.error("Error al procesar alertas de inasistencias:", err);
+    console.error("Error al procesar alertas:", err);
     tbodySeguimiento.innerHTML = `<tr><td colspan="5" style="text-align: center; color: red; padding: 15px;">Error al cargar alertas: ${err.message}</td></tr>`;
   }
-}
-  
+}  
 // 10. Filtrar tabla por buscador y desplegables
 function filtrarTablaInasistencias() {
   const buscador = document.getElementById('inputBuscarInasistencia')?.value.toLowerCase().trim() || '';
