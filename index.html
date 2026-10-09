@@ -3182,44 +3182,72 @@ document.addEventListener('DOMContentLoaded', () => {
 });
 
 // 2. Función que consulta la base de datos y arma el listado base
+// Carga el reporte de inasistencias completo superando el límite de 1000 filas de Supabase
 async function cargarReporteInasistencias() {
   const tbody = document.getElementById('tbodyConsultaInasistencias');
   if (!tbody) return;
 
-  tbody.innerHTML = '<tr><td colspan="6" style="text-align: center; padding: 20px;">Cargando reporte de inasistencias...</td></tr>';
+  tbody.innerHTML = '<tr><td colspan="6" style="text-align: center; padding: 20px;">Cargando reporte de inasistencias de todos los estudiantes...</td></tr>';
 
   try {
     const cliente = typeof supabaseClient !== 'undefined' ? supabaseClient : supabase;
+    const anioLectivo = document.getElementById('selectAnioLectivo')?.value || '2026';
     const cursoClave = typeof obtenerCursoSeleccionado === 'function' ? obtenerCursoSeleccionado() : '';
 
+    // 1. Obtener los estudiantes (con o sin filtro de curso)
     let queryAlumnos = cliente.from('alumnos').select('*');
     if (cursoClave) {
-      queryAlumnos = queryAlumnos.eq('curso_division', cursoClave);
+      const numAnio = cursoClave.match(/\d+/g)?.[0] || '';
+      const numSec = cursoClave.match(/\d+/g)?.[1] || '';
+      if (numAnio) {
+        queryAlumnos = queryAlumnos.ilike('curso_division', `%${numAnio}%`);
+      }
     }
 
     const { data: alumnos, error: errAlumnos } = await queryAlumnos;
     if (errAlumnos) throw errAlumnos;
 
-    const { data: registrosInasistencias, error: errInasistencias } = await cliente
-      .from('inasistencias_alumnos')
-      .select('*');
+    // 2. Traer TODAS las inasistencias del ciclo lectivo paginando de a 1000 filas
+    let todasLasInasistencias = [];
+    let desde = 0;
+    const paso = 1000;
+    let continuar = true;
 
-    if (errInasistencias) throw errInasistencias;
+    while (continuar) {
+      const { data: bloque, error: errInasistencias } = await cliente
+        .from('inasistencias_alumnos')
+        .select('*')
+        .like('mes', `${anioLectivo}-%`)
+        .range(desde, desde + paso - 1);
 
+      if (errInasistencias) throw errInasistencias;
+
+      if (bloque && bloque.length > 0) {
+        todasLasInasistencias = todasLasInasistencias.concat(bloque);
+        desde += paso;
+        if (bloque.length < paso) continuar = false;
+      } else {
+        continuar = false;
+      }
+    }
+
+    // 3. Cruzar los estudiantes con sus inasistencias (soporta id numérico y formato al_slug)
     listaAlumnosReporteInasistencias = (alumnos || []).map(al => {
-      // Generar la clave al_... para cruzar con inasistencias_alumnos
-      const alumnoKey = `al_${(al.nombre_apellido || '').toLowerCase().replace(/[^a-z0-9]/g, '_')}`;
-      
-      const faltas = (registrosInasistencias || []).filter(i => 
-        String(i.alumno_id) === alumnoKey || String(i.alumno_id) === String(al.id)
-      );
+      const nombreAlumno = al.nombre_apellido || 'Sin nombre';
+      const alumnoKeySlug = `al_${nombreAlumno.toLowerCase().replace(/[^a-z0-9]/g, '_')}`;
+      const idOriginalStr = String(al.id);
+
+      const faltas = todasLasInasistencias.filter(i => {
+        const idInasistenciaStr = String(i.alumno_id);
+        return idInasistenciaStr === alumnoKeySlug || idInasistenciaStr === idOriginalStr;
+      });
 
       let totalAnual = 0;
       let t1 = 0, t2 = 0, t3 = 0, dic = 0;
       let totalDiasClase = 0;
 
       faltas.forEach(reg => {
-        const valorFalta = parseFloat(reg.faltas || reg.cantidad || 0);
+        const valorFalta = parseFloat(reg.faltas || 0);
         const diasClaseMes = parseInt(reg.dias_clase || 20);
         const mesStr = String(reg.mes || '');
 
@@ -3238,7 +3266,7 @@ async function cargarReporteInasistencias() {
 
       return {
         id: al.id,
-        nombre: al.nombre_apellido || 'Sin nombre',
+        nombre: nombreAlumno,
         cursoDiv: al.curso_division || al.curso || '-',
         t1, t2, t3, dic,
         totalAnual,
@@ -3246,13 +3274,12 @@ async function cargarReporteInasistencias() {
       };
     });
 
-    if (typeof filtrarReporteTrimestralJS === 'function') {
-      filtrarReporteTrimestralJS();
-    }
+    // Renderizar la tabla con el listado completo procesado
+    filtrarReporteTrimestralJS();
 
   } catch (err) {
-    console.error("Error al cargar reporte:", err);
-    tbody.innerHTML = `<tr><td colspan="6" style="text-align: center; color: red; padding: 15px;">Error: ${err.message}</td></tr>`;
+    console.error("Error al cargar el reporte de inasistencias:", err);
+    tbody.innerHTML = `<tr><td colspan="6" style="text-align: center; color: red; padding: 15px;">Error al cargar datos: ${err.message}</td></tr>`;
   }
 }
   // 3. FUNCIÓN NUEVA: Filtra instantáneamente la tabla sin volver a consultar a Supabase
