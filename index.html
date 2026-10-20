@@ -168,6 +168,17 @@
 .badge-normal { background-color: #d1fae5; color: #065f46; }
 .badge-riesgo { background-color: #fef3c7; color: #92400e; }
 .badge-alerta { background-color: #fee2e2; color: #991b1b; }
+
+  /* Estilo para resaltar la semana en curso */
+table tr.semana-actual {
+  background-color: #dbeafe !important; /* Azul claro destacado */
+  font-weight: bold;
+  border-left: 4px solid #2563eb;
+}
+
+table tr.semana-actual td {
+  color: #1e3a8a;
+}
 </style>
 </head>
 <body>
@@ -1521,6 +1532,10 @@ supabaseClient.auth.onAuthStateChange((_event, session) => {
         .then(({ data }) => {
           if (data && data.length > 0) {
             localStorage.setItem('ep7_ultimo_recordatorio_visto', data[0].id);
+
+     if (tabId === 'docenteTurno' || tabId === 'docenteturno') {
+  resaltarSemanaEnCurso();
+}
           }
         });
     }
@@ -3418,6 +3433,42 @@ async function cambiarCicloLectivo() {
     procesarAlertasInasistencias();
   }
 }
+  function resaltarSemanaEnCurso() {
+  const tabla = document.querySelector('#docenteTurno table');
+  if (!tabla) return;
+
+  const filas = tabla.querySelectorAll('tbody tr');
+  const hoy = new Date(); // Toma la fecha actual del sistema
+
+  filas.forEach(fila => {
+    fila.classList.remove('semana-actual');
+    const celdas = fila.querySelectorAll('td');
+    if (celdas.length === 0) return;
+
+    // El texto de la primera celda tiene el formato "DD/MM al DD/MM" (ej: "19/10 al 23/10")
+    const textoSemana = celdas[0].innerText.trim();
+    const partes = textoSemana.split(' al ');
+    if (partes.length !== 2) return;
+
+    const [diaInicio, mesInicio] = partes[0].split('/').map(Number);
+    const [diaFin, mesFin] = partes[1].split('/').map(Number);
+    const anioActual = hoy.getFullYear();
+
+    // Crear objetos de fecha para el inicio y fin de la semana (asumiendo año lectivo actual)
+    const fechaInicio = new Date(anioActual, mesInicio - 1, diaInicio);
+    const fechaFin = new Date(anioActual, mesFin - 1, diaFin, 23, 59, 59); // Final del día
+
+    // Verificar si la fecha de hoy se encuentra dentro del rango de esta fila
+    if (hoy >= fechaInicio && hoy <= fechaFin) {
+      fila.classList.add('semana-actual');
+    }
+  });
+}
+
+// Ejecutar la función automáticamente al cargar la página
+document.addEventListener('DOMContentLoaded', () => {
+  resaltarSemanaEnCurso();
+});
 </script>
 </body>
 </html>
