@@ -192,6 +192,8 @@
     <li class="nav-item" onclick="switchTab('inasistencias')">⏰ Inasistencias</li>
     <li class="nav-item" onclick="switchTab('calificaciones')">📊 Calificaciones</li>
     <li class="nav-item" onclick="switchTab('fechas')">📅 Fechas Importantes</li>
+    <span id="badgeFechasNuevas" style="background: #ef4444; color: white; border-radius: 10px; padding: 2px 7px; font-size: 11px; font-weight: bold; margin-left: auto; display: none;">NUEVO</span>
+</li>
     <li class="nav-item" onclick="switchTab('alumnos')">👥 Alumnos y Teléfonos</li>
     <li class="nav-item" onclick="switchTab('salidasEducativas')">🚌 Salidas Educativas</li>
     <li class="nav-item" onclick="switchTab('adminPanel')">⚙️ Usuarios (Admin)</li>
@@ -1224,8 +1226,8 @@
   </div>
 
   <!-- Contenedor dinámico de notas/recordatorios -->
-  <div id="listaFechasImportantes">
-    <p style="color: #64748b;">Cargando recordatorios...</p>
+  <div id="fechasContainer">
+  <p style="color: #64748b;">Cargando recordatorios...</p>
   </div>
 </div>
 
@@ -1498,9 +1500,30 @@ supabaseClient.auth.onAuthStateChange((_event, session) => {
   targetTab.style.display = 'block';
   targetTab.classList.add('active');
 
-  // Si se entra a la pestaña 5, cargar datos y verificar permisos
+  // Si se entra a la pestaña 5 o fechas, cargar datos y verificar permisos
   if (tabId === 'tab5' || tabId === 'tab-5') {
     verificarPermisosDirector(document.getElementById('userStatus').innerText);
+  }
+
+  // Lógica para marcar los recordatorios como leídos al ingresar a la pestaña "fechas"
+  if (tabId === 'fechas') {
+    // 1. Ocultar el globo de notificación en el menú
+    const badge = document.getElementById('badgeFechasNuevas');
+    if (badge) badge.style.display = 'none';
+
+    // 2. Guardar el ID más alto de las fechas publicadas para que sepa que ya las leyó todas
+    if (typeof supabaseClient !== 'undefined') {
+      supabaseClient
+        .from('fechas_importantes')
+        .select('id')
+        .order('id', { ascending: false })
+        .limit(1)
+        .then(({ data }) => {
+          if (data && data.length > 0) {
+            localStorage.setItem('ep7_ultimo_recordatorio_visto', data[0].id);
+          }
+        });
+    }
   }
 }
 
@@ -1809,19 +1832,41 @@ async function cargarFechasImportantes() {
       return;
     }
 
+    // --- LÓGICA DE NOTIFICACIONES Y FECHAS NUEVAS ---
+    const badge = document.getElementById('badgeFechasNuevas');
+    // Obtenemos el ID del último recordatorio guardado en el teléfono/PC del usuario
+    const ultimoIdVisto = parseInt(localStorage.getItem('ep7_ultimo_recordatorio_visto') || '0');
+
+    // Contamos cuántos recordatorios en Supabase tienen un ID mayor al último visto
+    const publicacionesNuevas = data.filter(item => item.id > ultimoIdVisto).length;
+
+    if (badge) {
+      if (publicacionesNuevas > 0) {
+        badge.innerText = publicacionesNuevas > 1 ? `${publicacionesNuevas} NUEVOS` : 'NUEVO';
+        badge.style.display = 'inline-block';
+      } else {
+        badge.style.display = 'none';
+      }
+    }
+
+    // --- RENDERIZADO DE LAS TARJETAS ---
     contenedor.innerHTML = '';
     data.forEach((item) => {
+      const esNueva = item.id > ultimoIdVisto;
       const card = document.createElement('div');
-      card.style.cssText = 'background: white; border-left: 4px solid #2563eb; padding: 12px; margin-bottom: 10px; border-radius: 4px; box-shadow: 0 1px 3px rgba(0,0,0,0.1); display: flex; justify-content: space-between; align-items: flex-start;';
+      card.style.cssText = `background: white; border-left: 4px solid ${esNueva ? '#ef4444' : '#2563eb'}; padding: 12px; margin-bottom: 10px; border-radius: 4px; box-shadow: 0 1px 3px rgba(0,0,0,0.1); display: flex; justify-content: space-between; align-items: flex-start;`;
 
       let botonEliminar = '';
       if (esDirector) {
         botonEliminar = `<button onclick="eliminarFechaImportante(${item.id})" style="background: transparent; color: #ef4444; border: none; font-weight: bold; cursor: pointer; padding: 0 4px;">❌</button>`;
       }
 
+      // Si la publicación es nueva para el usuario, le agrega una pequeña etiqueta destacada
+      const etiquetaNovedad = esNueva ? `<span style="background: #fef2f2; color: #dc2626; border: 1px solid #fca5a5; padding: 2px 6px; border-radius: 4px; font-size: 10px; font-weight: bold; margin-left: 6px;">¡NUEVO!</span>` : '';
+
       card.innerHTML = `
         <div>
-          <h4 style="margin: 0 0 4px 0; color: #0f172a;">${item.titulo}</h4>
+          <h4 style="margin: 0 0 4px 0; color: #0f172a;">${item.titulo} ${etiquetaNovedad}</h4>
           <p style="margin: 0; color: #475569; font-size: 14px; white-space: pre-line;">${item.detalle}</p>
         </div>
         ${botonEliminar}
@@ -1829,12 +1874,12 @@ async function cargarFechasImportantes() {
 
       contenedor.appendChild(card);
     });
+
   } catch (err) {
     console.error('Error al cargar fechas:', err);
-    contenedor.innerHTML = '<p style="color: #ef4444;">Error al cargar las fechas. Verificá que la tabla exista en Supabase.</p>';
+    contenedor.innerHTML = '<p style="color: #ef4444;">Error al cargar las fechas. Verificá la conexión con Supabase.</p>';
   }
 }
-
 // Guardar fecha importante
 async function guardarFechaImportante(e) {
   e.preventDefault();
