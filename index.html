@@ -2097,11 +2097,11 @@ function obtenerCursoSeleccionado() {
   const anio = document.getElementById('selectAnioInasistencias')?.value.trim() || '';
   const seccion = document.getElementById('selectSeccionInasistencias')?.value.trim() || '';
   
-  if (!anio && !seccion) return '';
-  return `${anio} ${seccion}`.trim();
+  if (!anio) return '';
+  // Si hay sección, los unimos con espacio (ej: "5° 3ª"); si no, devolvemos solo el año.
+  return seccion ? `${anio} ${seccion}`.trim() : anio;
 }
-
-// 2. Evento al cambiar de Año o División en los desplegables
+  // 2. Evento al cambiar de Año o División en los desplegables
 // Evento al cambiar de Año o División en los desplegables
 function alCambiarFiltroOCurso() {
   // 1. Filtrar la tabla de la planilla de carga
@@ -2686,22 +2686,17 @@ function filtrarTablaInasistencias() {
   const anioFiltro = document.getElementById('selectAnioInasistencias')?.value.trim() || '';
   const seccionFiltro = document.getElementById('selectSeccionInasistencias')?.value.trim() || '';
 
-  const numAnioFiltro = anioFiltro.replace(/[^0-9]/g, '');
-  const numSeccionFiltro = seccionFiltro.replace(/[^0-9]/g, '');
-
   const filas = document.querySelectorAll('#tablaInasistencias tbody tr');
 
   filas.forEach(fila => {
-    const cursoTexto = fila.children[0] ? fila.children[0].innerText.trim() : '';
+    const cursoTexto = (fila.getAttribute('data-curso') || fila.children[0]?.innerText || '').trim();
     const alumnoTexto = fila.children[1] ? fila.children[1].innerText.toLowerCase() : '';
 
-    const numerosCurso = cursoTexto.match(/\d+/g) || [];
-    const anioFilaNum = numerosCurso[0] || '';
-    const seccionFilaNum = numerosCurso[1] || '';
-
-    const coincideNombre = alumnoTexto.includes(buscador);
-    const coincideAnio = !numAnioFiltro || anioFilaNum === numAnioFiltro;
-    const coincideSeccion = !numSeccionFiltro || seccionFilaNum === numSeccionFiltro;
+    const coincideNombre = !buscador || alumnoTexto.includes(buscador);
+    
+    // Verificamos si el curso de la fila incluye el año y la sección seleccionada en los filtros
+    const coincideAnio = !anioFiltro || cursoTexto.includes(anioFiltro);
+    const coincideSeccion = !seccionFiltro || cursoTexto.includes(seccionFiltro);
 
     if (coincideNombre && coincideAnio && coincideSeccion) {
       fila.style.display = '';
@@ -2710,7 +2705,6 @@ function filtrarTablaInasistencias() {
     }
   });
 }
-
 // Variable global para almacenar el reporte de inasistencias en memoria
 let listaAlumnosReporteInasistencias = [];
 
