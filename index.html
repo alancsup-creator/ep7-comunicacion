@@ -2246,12 +2246,9 @@ function poblarTablaInasistencias() {
   listaAlumnosGlobal.forEach((alumno) => {
     const curso = alumno.curso_division || '';
     const nombreAlumno = alumno.nombre_apellido || '';
+    const alumnoId = alumno.id; // 👈 USAMOS DIRECTAMENTE EL ID REAL DE SUPABASE
 
     if (!nombreAlumno) return;
-
-    // GENERAR LA CLAVE DE TEXTO EXACTAMENTE IGUAL A COMO ESTÁ EN SUPABASE
-    // Ejemplo: "ALIANO PINTOS, Álvaro Iván" -> "al_aliano_pintos__lvaro_iv_n"
-    const alumnoId = `al_${nombreAlumno.toLowerCase().replace(/[^a-z0-9]/g, '_')}`;
 
     const tr = document.createElement('tr');
     tr.setAttribute('data-alumno-id', alumnoId);
@@ -2291,8 +2288,6 @@ function poblarTablaInasistencias() {
   alCambiarFiltroOCurso();
   cargarInasistenciasMensuales();
 }
-
-
 // 5. Recalcular métricas tomando los días específicos asignados a la propia fila
 function recalcularFila(fila) {
   const inputFaltas = fila.querySelector('.input-faltas');
@@ -2419,7 +2414,7 @@ async function cargarAcumuladoAnual() {
 
   if (data) {
     data.forEach(rec => {
-      const id = rec.alumno_id;
+      const id = String(rec.alumno_id);
       const faltas = parseFloat(rec.faltas) || 0;
       const dias = parseInt(rec.dias_clase) || 20;
 
@@ -2431,7 +2426,8 @@ async function cargarAcumuladoAnual() {
   const listaSeguimiento = [];
 
   document.querySelectorAll('#tablaInasistencias tbody tr').forEach(fila => {
-    const alumnoId = fila.getAttribute('data-alumno-id');
+    const alumnoId = String(fila.getAttribute('data-alumno-id'));
+    const alumnoIdSlug = `al_${(fila.children[1]?.innerText || '').toLowerCase().replace(/[^a-z0-9]/g, '_')}`;
     const curso = fila.getAttribute('data-curso') || '';
     const alumnoNombre = fila.children[1] ? fila.children[1].innerText.trim() : '';
 
@@ -2439,8 +2435,9 @@ async function cargarAcumuladoAnual() {
     const celdaPctAnual = fila.querySelector('.porcentaje-anual');
     const celdaEstado = fila.querySelector('.estado-asistencia');
 
-    const totalFaltasAnio = acumuladosFaltas[alumnoId] || 0;
-    const totalDiasEscolares = acumuladosDiasClase[alumnoId] || 20;
+    // Sumamos buscando por el ID real o por el slug antiguo por compatibilidad
+    const totalFaltasAnio = acumuladosFaltas[alumnoId] || acumuladosFaltas[alumnoIdSlug] || 0;
+    const totalDiasEscolares = acumuladosDiasClase[alumnoId] || acumuladosDiasClase[alumnoIdSlug] || 20;
 
     const asistenciasAnio = Math.max(0, totalDiasEscolares - totalFaltasAnio);
     const pctAsistenciaAnual = totalDiasEscolares > 0 ? Math.round((asistenciasAnio / totalDiasEscolares) * 100) : 100;
@@ -2451,10 +2448,6 @@ async function cargarAcumuladoAnual() {
     let estadoHTML = '';
     let estadoTexto = 'Regular';
 
-    // NUEVO CRITERIO SOLICITADO:
-    // 0% a 69.99% (< 70%): Alerta
-    // 70% a 79.99% (< 80%): En riesgo
-    // 80% a 100%: Regular
     if (pctAsistenciaAnual < 70) {
       estadoTexto = 'Alerta';
       estadoHTML = `<span style="background: #fef2f2; color: #dc2626; border: 1px solid #fca5a5; padding: 3px 8px; border-radius: 12px; font-size: 12px; font-weight: bold;">🚨 Alerta</span>`;
