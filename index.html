@@ -2246,12 +2246,15 @@ function poblarTablaInasistencias() {
   listaAlumnosGlobal.forEach((alumno) => {
     const curso = alumno.curso_division || '';
     const nombreAlumno = alumno.nombre_apellido || '';
-    const alumnoId = alumno.id; // 👈 USAMOS DIRECTAMENTE EL ID REAL DE SUPABASE
+    const alumnoIdNum = alumno.id;
+    const alumnoIdSlug = `al_${nombreAlumno.toLowerCase().replace(/[^a-z0-9]/g, '_')}`;
 
     if (!nombreAlumno) return;
 
     const tr = document.createElement('tr');
-    tr.setAttribute('data-alumno-id', alumnoId);
+    // Guardamos el ID numérico principal, pero dejamos referencia al slug para buscar datos viejos
+    tr.setAttribute('data-alumno-id', alumnoIdNum);
+    tr.setAttribute('data-alumno-slug', alumnoIdSlug);
     tr.setAttribute('data-curso', curso);
     tr.setAttribute('data-dias-clase', diasHabilesPorCurso[curso] || 20);
 
@@ -2288,7 +2291,7 @@ function poblarTablaInasistencias() {
   alCambiarFiltroOCurso();
   cargarInasistenciasMensuales();
 }
-// 5. Recalcular métricas tomando los días específicos asignados a la propia fila
+  // 5. Recalcular métricas tomando los días específicos asignados a la propia fila
 function recalcularFila(fila) {
   const inputFaltas = fila.querySelector('.input-faltas');
   const celdaAsistencia = fila.querySelector('.asistencia-mes');
@@ -2362,22 +2365,25 @@ async function cargarInasistenciasMensuales() {
   const mapaMensual = {};
   if (data && data.length > 0) {
     data.forEach(item => {
-      mapaMensual[item.alumno_id] = item;
+      mapaMensual[String(item.alumno_id)] = item;
     });
   }
 
   document.querySelectorAll('#tablaInasistencias tbody tr').forEach(fila => {
-    const alumnoId = fila.getAttribute('data-alumno-id');
+    const alumnoIdNum = String(fila.getAttribute('data-alumno-id'));
+    const alumnoIdSlug = fila.getAttribute('data-alumno-slug');
     const cursoFila = fila.getAttribute('data-curso');
     const inputFaltas = fila.querySelector('.input-faltas');
 
-    if (mapaMensual[alumnoId]) {
-      if (inputFaltas) inputFaltas.value = mapaMensual[alumnoId].faltas || 0;
+    // Buscamos si existe registro con el ID numérico o con el slug antiguo
+    const registroEncontrado = mapaMensual[alumnoIdNum] || mapaMensual[alumnoIdSlug];
+
+    if (registroEncontrado) {
+      if (inputFaltas) inputFaltas.value = registroEncontrado.faltas || 0;
       
-      // Si el alumno tiene días guardados en Supabase, los aplicamos a su curso y fila
-      if (mapaMensual[alumnoId].dias_clase) {
-        fila.setAttribute('data-dias-clase', mapaMensual[alumnoId].dias_clase);
-        diasHabilesPorCurso[cursoFila] = mapaMensual[alumnoId].dias_clase;
+      if (registroEncontrado.dias_clase) {
+        fila.setAttribute('data-dias-clase', registroEncontrado.dias_clase);
+        diasHabilesPorCurso[cursoFila] = registroEncontrado.dias_clase;
       }
     } else {
       if (inputFaltas) inputFaltas.value = 0;
@@ -2386,11 +2392,9 @@ async function cargarInasistenciasMensuales() {
     recalcularFila(fila);
   });
 
-  // Actualiza el input visual según el filtro de curso actual
   alCambiarFiltroOCurso();
   cargarAcumuladoAnual();
 }
-
 // 8. Recalcular la suma anual respetando los días guardados década alumno
 async function cargarAcumuladoAnual() {
   const inputMes = document.getElementById('mesInasistencias');
